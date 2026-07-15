@@ -1801,6 +1801,66 @@ textarea {
   opacity: 0.45;
 }
 
+.detail-probill-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  margin-top: 10px;
+}
+
+.detail-probill-meta .meta-chip.soft {
+  background: var(--paper);
+  color: var(--ink-soft);
+  border: 1px solid var(--line);
+}
+
+.detail-probill-meta .status-pill.shipment-in_transit {
+  background: rgba(37, 99, 235, 0.1);
+  border-color: rgba(37, 99, 235, 0.22);
+  color: #1d4ed8;
+}
+
+.detail-probill-meta .status-pill.transit {
+  background: rgba(107, 77, 230, 0.1);
+  border-color: rgba(107, 77, 230, 0.22);
+  color: #5b3fc9;
+}
+
+.detail-probill-meta .status-pill.transit-at_pickup,
+.detail-probill-meta .status-pill.transit-at_delivery {
+  background: rgba(217, 119, 6, 0.1);
+  border-color: rgba(217, 119, 6, 0.22);
+  color: #b45309;
+}
+
+.alert-collapsed-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.alert-collapsed-meta .status-pill.shipment-in_transit {
+  background: rgba(37, 99, 235, 0.1);
+  border-color: rgba(37, 99, 235, 0.22);
+  color: #1d4ed8;
+}
+
+.alert-collapsed-meta .status-pill.transit {
+  background: rgba(107, 77, 230, 0.1);
+  border-color: rgba(107, 77, 230, 0.22);
+  color: #5b3fc9;
+}
+
+.entity-details-grid-wide {
+  grid-template-columns: 1fr 1fr;
+}
+
+.entity-details-grid-wide .span-2 {
+  grid-column: 1 / -1;
+}
+
 .alert-tabs {
   display: flex;
   gap: 4px;

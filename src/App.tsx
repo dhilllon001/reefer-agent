@@ -1042,6 +1042,9 @@ function DetailPane({
   )
   const visibleAlerts = alertTab === 'active' ? activeAlerts : inactiveAlerts
   const lastActivity = sortedAlerts[0]?.sentAt
+  const profile = getCustomerProfile(selected.customer)
+  const sensitivity = getCustomerSensitivity(selected.customer)
+  const tempDelta = selected.setTemp - selected.requiredTemp
 
   return (
     <div className="detail-alerts">
@@ -1071,6 +1074,18 @@ function DetailPane({
                 </a>
               </p>
             </div>
+          </div>
+          <div className="detail-probill-meta">
+            <span className={`status-pill shipment-${selected.status}`}>
+              {SHIPMENT_STATUS_LABEL[selected.status]}
+            </span>
+            <span className={`status-pill transit transit-${selected.transitStatus}`}>
+              {TRANSIT_STATUS_LABEL[selected.transitStatus]}
+            </span>
+            <span className={`sens-inline sens-${sensitivity}`}>
+              {SENSITIVITY_LABEL[sensitivity]} sensitivity
+            </span>
+            <span className="meta-chip soft">{profile.segment}</span>
           </div>
           <p className="detail-activity-line">
             <strong>{activeAlerts.length}</strong> active alert
@@ -1127,6 +1142,10 @@ function DetailPane({
                 : alert.status === 'approved'
                   ? 'Approved'
                   : 'Rejected'
+          const showMode =
+            alert.type === 'mode_mismatch' &&
+            selected.reeferMode &&
+            selected.requiredMode
 
           return (
             <article
@@ -1146,9 +1165,11 @@ function DetailPane({
                     <span className="status-dot" />
                     <strong className="active-label">ACTIVE</strong>
                     <span className="agent-name">{alert.agent}</span>
-                    <span
-                      className={`pending-tag status-tag-${alert.status}`}
-                    >
+                    <span className={`sev-pill sev-${alert.severity}`}>
+                      {SEVERITY_LABEL[alert.severity]}
+                    </span>
+                    <span className="type-tag">{ALERT_TYPE_LABEL[alert.type]}</span>
+                    <span className={`pending-tag status-tag-${alert.status}`}>
                       {statusLabel}
                     </span>
                   </div>
@@ -1159,28 +1180,104 @@ function DetailPane({
                 <p className={`alert-message ${expanded ? '' : 'is-clamp'}`}>
                   {alert.message}
                 </p>
+                {!expanded && (
+                  <div className="alert-collapsed-meta">
+                    <span className={`status-pill shipment-${selected.status}`}>
+                      {SHIPMENT_STATUS_LABEL[selected.status]}
+                    </span>
+                    <span
+                      className={`status-pill transit transit-${selected.transitStatus}`}
+                    >
+                      {TRANSIT_STATUS_LABEL[selected.transitStatus]}
+                    </span>
+                    <span className={`sens-inline sens-${sensitivity}`}>
+                      {SENSITIVITY_LABEL[sensitivity]} sens.
+                    </span>
+                  </div>
+                )}
               </button>
 
               {expanded && (
                 <div className="alert-expanded-body">
                   <div className="entity-details-block">
                     <h3>Entity details</h3>
-                    <dl className="entity-details-grid">
+                    <dl className="entity-details-grid entity-details-grid-wide">
+                      <div>
+                        <dt>ProBill status</dt>
+                        <dd>{SHIPMENT_STATUS_LABEL[selected.status]}</dd>
+                      </div>
+                      <div>
+                        <dt>Transit status</dt>
+                        <dd>{TRANSIT_STATUS_LABEL[selected.transitStatus]}</dd>
+                      </div>
+                      <div>
+                        <dt>Alert type</dt>
+                        <dd>{ALERT_TYPE_LABEL[alert.type]}</dd>
+                      </div>
+                      <div>
+                        <dt>Severity</dt>
+                        <dd>
+                          <span className={`sev-pill sev-${alert.severity}`}>
+                            {SEVERITY_LABEL[alert.severity]}
+                          </span>
+                        </dd>
+                      </div>
+                      <div>
+                        <dt>Customer</dt>
+                        <dd>{selected.customer}</dd>
+                      </div>
+                      <div>
+                        <dt>Customer sensitivity</dt>
+                        <dd>
+                          <span className={`sens-inline sens-${sensitivity}`}>
+                            {SENSITIVITY_LABEL[sensitivity]}
+                          </span>
+                        </dd>
+                      </div>
                       <div>
                         <dt>Trailer #</dt>
                         <dd>{selected.trailer}</dd>
-                      </div>
-                      <div>
-                        <dt>Probill temp</dt>
-                        <dd>{selected.requiredTemp.toFixed(1)}</dd>
                       </div>
                       <div>
                         <dt>Reefer status</dt>
                         <dd>{selected.reeferStatus}</dd>
                       </div>
                       <div>
+                        <dt>Probill temp</dt>
+                        <dd>{selected.requiredTemp.toFixed(1)}°F</dd>
+                      </div>
+                      <div>
                         <dt>Set temp</dt>
-                        <dd>{selected.setTemp.toFixed(1)}</dd>
+                        <dd>{selected.setTemp.toFixed(1)}°F</dd>
+                      </div>
+                      <div>
+                        <dt>Temp deviation</dt>
+                        <dd>
+                          {tempDelta > 0 ? '+' : ''}
+                          {tempDelta.toFixed(1)}°F
+                        </dd>
+                      </div>
+                      <div>
+                        <dt>Segment</dt>
+                        <dd>{profile.segment}</dd>
+                      </div>
+                      {showMode && (
+                        <>
+                          <div>
+                            <dt>Current mode</dt>
+                            <dd>{selected.reeferMode}</dd>
+                          </div>
+                          <div>
+                            <dt>Required mode</dt>
+                            <dd>{selected.requiredMode}</dd>
+                          </div>
+                        </>
+                      )}
+                      <div className="span-2">
+                        <dt>Route</dt>
+                        <dd>
+                          {selected.origin} → {selected.destination}
+                        </dd>
                       </div>
                     </dl>
                   </div>
