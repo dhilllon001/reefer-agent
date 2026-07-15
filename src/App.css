@@ -2116,13 +2116,33 @@ textarea {
   color: var(--ink);
 }
 
-.entity-details-grid dt.value-alert,
-.entity-details-grid .value-alert {
-  color: var(--high);
+.entity-details-grid dd.value-alert {
+  color: #c62828;
+  font-weight: 700;
 }
 
-.entity-details-grid div:has(.value-alert) dt {
+.entity-details-grid dd.alert-type-temp_deviation {
   color: #c62828;
+}
+
+.entity-details-grid dd.alert-type-mode_mismatch {
+  color: #b45309;
+}
+
+.entity-details-grid dd.alert-type-reefer_off {
+  color: #b91c1c;
+}
+
+.entity-details-grid div:has(dd.value-alert) dt {
+  color: #c62828;
+}
+
+.entity-details-grid div:has(dd.alert-type-mode_mismatch) dt {
+  color: #b45309;
+}
+
+.entity-details-grid div:has(dd.alert-type-reefer_off) dt {
+  color: #b91c1c;
 }
 
 .product-alert .action-row {

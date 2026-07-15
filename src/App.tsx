@@ -1250,7 +1250,9 @@ function DetailPane({
                       </div>
                       <div>
                         <dt>Alert type</dt>
-                        <dd className="value-alert">{ALERT_TYPE_LABEL[alert.type]}</dd>
+                        <dd className={`value-alert alert-type-${alert.type}`}>
+                          {ALERT_TYPE_LABEL[alert.type]}
+                        </dd>
                       </div>
                       <div>
                         <dt>Severity</dt>
