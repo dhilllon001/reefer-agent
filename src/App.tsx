@@ -1,4 +1,4 @@
-import { useMemo, useState, type FormEvent, type ReactNode } from 'react'
+import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from 'react'
 import {
   CUSTOMER_PROFILES,
   getCustomerProfile,
@@ -1017,271 +1017,246 @@ function DetailPane({
   rejectingId: string | null
   setRejectingId: (id: string | null) => void
 }) {
-  const pendingCount = selected.alerts.filter((a) => a.status === 'pending').length
-  const profile = getCustomerProfile(selected.customer)
-  const sensitivity = getCustomerSensitivity(selected.customer)
-  const tempDelta = selected.setTemp - selected.requiredTemp
-  const absDelta = Math.abs(tempDelta)
-  const direction =
-    tempDelta > 0 ? 'TOO HOT' : tempDelta < 0 ? 'TOO COLD' : 'ON TARGET'
+  const [alertTab, setAlertTab] = useState<'active' | 'inactive'>('active')
+  const [expandedAlertId, setExpandedAlertId] = useState<string | null>(null)
+
+  useEffect(() => {
+    setExpandedAlertId(null)
+    setAlertTab('active')
+    setRejectingId(null)
+  }, [selected.id, setRejectingId])
+
+  const sortedAlerts = useMemo(
+    () =>
+      [...selected.alerts].sort(
+        (a, b) => new Date(b.sentAt).getTime() - new Date(a.sentAt).getTime(),
+      ),
+    [selected.alerts],
+  )
+
+  const activeAlerts = sortedAlerts.filter(
+    (a) => a.status === 'pending' || a.status === 'active',
+  )
+  const inactiveAlerts = sortedAlerts.filter(
+    (a) => a.status === 'approved' || a.status === 'rejected',
+  )
+  const visibleAlerts = alertTab === 'active' ? activeAlerts : inactiveAlerts
+  const lastActivity = sortedAlerts[0]?.sentAt
 
   return (
-    <>
-      <div className="detail-header detail-header-clean">
+    <div className="detail-alerts">
+      <div className="detail-header detail-header-product">
         <div className="detail-header-main">
           <div className="detail-title">
             <span className="pro-badge">P</span>
-            <h2>{selected.proBill}</h2>
-            <a className="ext-link" href={`#${selected.proBill}`} title="Open in TMS">
-              ↗
-            </a>
+            <div>
+              <div className="detail-title-row">
+                <h2>{selected.proBill}</h2>
+                <a
+                  className="ext-link"
+                  href={`#${selected.proBill}`}
+                  title="Open in TMS"
+                >
+                  ↗
+                </a>
+              </div>
+              <p className="detail-customer-link">
+                {selected.customer}
+                <a
+                  className="ext-link inline"
+                  href={`#customer-${selected.customer}`}
+                  title="Open customer"
+                >
+                  ↗
+                </a>
+              </p>
+            </div>
           </div>
-          <div className="detail-status-row">
-            <span className={`status-pill shipment-${selected.status}`}>
-              {SHIPMENT_STATUS_LABEL[selected.status]}
-            </span>
-            <span className={`status-pill transit transit-${selected.transitStatus}`}>
-              {TRANSIT_STATUS_LABEL[selected.transitStatus]}
-            </span>
-          </div>
-          <p className="detail-customer-line">
-            <strong>{selected.customer}</strong>
-            <span className="dot">·</span>
-            <span>{profile.segment}</span>
-            <span className="dot">·</span>
-            <span className={`sens-inline sens-${sensitivity}`}>
-              {SENSITIVITY_LABEL[sensitivity]} sensitivity
-            </span>
+          <p className="detail-activity-line">
+            <strong>{activeAlerts.length}</strong> active alert
+            {activeAlerts.length === 1 ? '' : 's'}
+            {lastActivity && (
+              <>
+                <span className="dot">·</span>
+                Last activity: {formatAbsolute(lastActivity)}
+              </>
+            )}
           </p>
-          <p className="detail-route-line">
-            {selected.origin}
-            <span aria-hidden> → </span>
-            {selected.destination}
-            <span className="dot">·</span>
-            Trailer {selected.trailer}
-          </p>
-        </div>
-        <div className="detail-badges">
-          {pendingCount > 0 && (
-            <span className="pending-badge">{pendingCount} pending</span>
-          )}
         </div>
       </div>
 
-      <div className="shipment-summary">
-        <div className="summary-cell">
-          <span className="summary-label">Status</span>
-          <span className="summary-value">
-            {SHIPMENT_STATUS_LABEL[selected.status]}
-          </span>
-        </div>
-        <div className="summary-cell">
-          <span className="summary-label">Transit</span>
-          <span className="summary-value">
-            {TRANSIT_STATUS_LABEL[selected.transitStatus]}
-          </span>
-        </div>
-        <div className="summary-cell">
-          <span className="summary-label">Required</span>
-          <span className="summary-value">{selected.requiredTemp.toFixed(1)}°F</span>
-        </div>
-        <div className="summary-cell">
-          <span className="summary-label">Set temp</span>
-          <span className="summary-value">{selected.setTemp.toFixed(1)}°F</span>
-        </div>
-        <div className="summary-cell">
-          <span className="summary-label">Deviation</span>
-          <span
-            className={`summary-value delta ${absDelta > 4 ? 'is-warn' : ''} ${absDelta > 10 ? 'is-critical' : ''}`}
-          >
-            {tempDelta > 0 ? '+' : ''}
-            {tempDelta.toFixed(1)}°F
-          </span>
-        </div>
-        <div className="summary-cell">
-          <span className="summary-label">Reefer</span>
-          <span className="summary-value">
-            {selected.reeferStatus}
-            {selected.reeferMode ? ` · ${selected.reeferMode}` : ''}
-          </span>
-        </div>
+      <div className="alert-tabs" role="tablist" aria-label="Alert status">
+        <button
+          type="button"
+          role="tab"
+          aria-selected={alertTab === 'active'}
+          className={alertTab === 'active' ? 'is-active' : ''}
+          onClick={() => {
+            setAlertTab('active')
+            setExpandedAlertId(null)
+            setRejectingId(null)
+          }}
+        >
+          Active
+          <span className="alert-tab-count">{activeAlerts.length}</span>
+        </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={alertTab === 'inactive'}
+          className={alertTab === 'inactive' ? 'is-active' : ''}
+          onClick={() => {
+            setAlertTab('inactive')
+            setExpandedAlertId(null)
+            setRejectingId(null)
+          }}
+        >
+          Inactive
+          <span className="alert-tab-count">{inactiveAlerts.length}</span>
+        </button>
       </div>
 
-      <div className="alert-stack alert-stack-primary">
-        {[...selected.alerts]
-          .sort(
-            (a, b) => new Date(b.sentAt).getTime() - new Date(a.sentAt).getTime(),
-          )
-          .map((alert) => {
-            const showTemp =
-              alert.type === 'temp_deviation' || alert.type === 'reefer_off'
-            const showMode = alert.type === 'mode_mismatch'
+      <div className="alert-stack alert-stack-collapsed">
+        {visibleAlerts.map((alert) => {
+          const expanded = expandedAlertId === alert.id
+          const statusLabel =
+            alert.status === 'pending'
+              ? 'Pending'
+              : alert.status === 'active'
+                ? 'Active'
+                : alert.status === 'approved'
+                  ? 'Approved'
+                  : 'Rejected'
 
-            return (
-              <article
-                key={alert.id}
-                className={`alert-card sev-border-${alert.severity}`}
+          return (
+            <article
+              key={alert.id}
+              className={`alert-card product-alert ${expanded ? 'is-expanded' : 'is-collapsed'}`}
+            >
+              <button
+                type="button"
+                className="alert-collapse-trigger"
+                onClick={() =>
+                  setExpandedAlertId((id) => (id === alert.id ? null : alert.id))
+                }
+                aria-expanded={expanded}
               >
                 <div className="alert-card-head">
                   <div className="alert-status">
-                    <span className={`sev-pill sev-${alert.severity}`}>
-                      {SEVERITY_LABEL[alert.severity]}
+                    <span className="status-dot" />
+                    <strong className="active-label">ACTIVE</strong>
+                    <span className="agent-name">{alert.agent}</span>
+                    <span
+                      className={`pending-tag status-tag-${alert.status}`}
+                    >
+                      {statusLabel}
                     </span>
-                    <span className="type-tag">{ALERT_TYPE_LABEL[alert.type]}</span>
-                    <span className="pending-tag">Pending</span>
                   </div>
                   <time dateTime={alert.sentAt} title={formatAbsolute(alert.sentAt)}>
                     {formatRelative(alert.sentAt)}
                   </time>
                 </div>
+                <p className={`alert-message ${expanded ? '' : 'is-clamp'}`}>
+                  {alert.message}
+                </p>
+              </button>
 
-                <p className="alert-message">{alert.message}</p>
+              {expanded && (
+                <div className="alert-expanded-body">
+                  <div className="entity-details-block">
+                    <h3>Entity details</h3>
+                    <dl className="entity-details-grid">
+                      <div>
+                        <dt>Trailer #</dt>
+                        <dd>{selected.trailer}</dd>
+                      </div>
+                      <div>
+                        <dt>Probill temp</dt>
+                        <dd>{selected.requiredTemp.toFixed(1)}</dd>
+                      </div>
+                      <div>
+                        <dt>Reefer status</dt>
+                        <dd>{selected.reeferStatus}</dd>
+                      </div>
+                      <div>
+                        <dt>Set temp</dt>
+                        <dd>{selected.setTemp.toFixed(1)}</dd>
+                      </div>
+                    </dl>
+                  </div>
 
-                {showTemp && (
-                  <div className="deviation-banner">
-                    <div>
-                      <span className="deviation-label">Temperature deviation</span>
-                      <strong className={`deviation-delta sev-text-${alert.severity}`}>
-                        {tempDelta > 0 ? '+' : ''}
-                        {tempDelta.toFixed(1)}°F · {direction}
-                      </strong>
-                    </div>
-                    <div className="deviation-temps">
-                      <span>
-                        Needs <b>{selected.requiredTemp.toFixed(1)}°F</b>
-                      </span>
-                      <span>
-                        Set <b>{selected.setTemp.toFixed(1)}°F</b>
-                      </span>
-                      {selected.returnAirTemp != null && (
-                        <span>
-                          Return <b>{selected.returnAirTemp.toFixed(1)}°F</b>
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                )}
-
-                {showMode && (
-                  <div className="deviation-banner mode-banner">
-                    <div>
-                      <span className="deviation-label">Mode mismatch</span>
-                      <strong>
-                        {selected.reeferMode ?? '—'}
-                        <span aria-hidden> → </span>
-                        needs {selected.requiredMode ?? '—'}
-                      </strong>
-                    </div>
-                  </div>
-                )}
-
-                <dl className="alert-meta-grid">
-                  <div>
-                    <dt>Customer</dt>
-                    <dd>{selected.customer}</dd>
-                  </div>
-                  <div>
-                    <dt>ProBill status</dt>
-                    <dd>{SHIPMENT_STATUS_LABEL[selected.status]}</dd>
-                  </div>
-                  <div>
-                    <dt>Transit status</dt>
-                    <dd>{TRANSIT_STATUS_LABEL[selected.transitStatus]}</dd>
-                  </div>
-                  <div>
-                    <dt>Sensitivity</dt>
-                    <dd>
-                      <span className={`sens-inline sens-${sensitivity}`}>
-                        {SENSITIVITY_LABEL[sensitivity]}
-                      </span>
-                    </dd>
-                  </div>
-                  <div>
-                    <dt>Trailer</dt>
-                    <dd>{selected.trailer}</dd>
-                  </div>
-                  <div>
-                    <dt>Reefer status</dt>
-                    <dd>{selected.reeferStatus}</dd>
-                  </div>
-                  <div>
-                    <dt>Segment</dt>
-                    <dd>{profile.segment}</dd>
-                  </div>
-                  <div>
-                    <dt>Route</dt>
-                    <dd>
-                      {selected.origin} → {selected.destination}
-                    </dd>
-                  </div>
-                </dl>
-
-                <div className="alert-actions">
-                  {rejectingId === alert.id ? (
-                    <div className="reject-panel">
-                      <p>Please select a reason for rejecting this alert:</p>
-                      <div className="radio-list">
-                        {[
-                          'CF not updated',
-                          'Readings are old',
-                          'Probill data incorrect',
-                          'Defrost mode',
-                          'Other',
-                        ].map((r, i) => (
-                          <label key={r}>
-                            <input
-                              type="radio"
-                              name={`reject-${alert.id}`}
-                              defaultChecked={i === 0}
+                  {(alert.status === 'pending' || alert.status === 'active') && (
+                    <div className="alert-actions">
+                      {rejectingId === alert.id ? (
+                        <div className="reject-panel">
+                          <p>Please select a reason for rejecting this alert:</p>
+                          <div className="radio-list">
+                            {[
+                              'CF not updated',
+                              'Readings are old',
+                              'Probill data incorrect',
+                              'Defrost mode',
+                              'Other',
+                            ].map((r, i) => (
+                              <label key={r}>
+                                <input
+                                  type="radio"
+                                  name={`reject-${alert.id}`}
+                                  defaultChecked={i === 0}
+                                />
+                                {r}
+                              </label>
+                            ))}
+                          </div>
+                          <label className="notes-label">
+                            Notes *
+                            <textarea
+                              placeholder="Add notes explaining this rejection"
+                              rows={3}
                             />
-                            {r}
                           </label>
-                        ))}
-                      </div>
-                      <label className="notes-label">
-                        Notes *
-                        <textarea
-                          placeholder="Add notes explaining this rejection"
-                          rows={3}
-                        />
-                      </label>
-                      <div className="action-row">
-                        <button
-                          type="button"
-                          className="btn ghost"
-                          onClick={() => setRejectingId(null)}
-                        >
-                          Cancel
-                        </button>
-                        <button type="button" className="btn danger">
-                          Reject alert
-                        </button>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="action-row">
-                      <button type="button" className="btn success">
-                        ✓ Approve
-                      </button>
-                      <button
-                        type="button"
-                        className="btn outline-danger"
-                        onClick={() => setRejectingId(alert.id)}
-                      >
-                        ✕ Reject
-                      </button>
+                          <div className="action-row">
+                            <button
+                              type="button"
+                              className="btn ghost"
+                              onClick={() => setRejectingId(null)}
+                            >
+                              Cancel
+                            </button>
+                            <button type="button" className="btn danger">
+                              Reject alert
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="action-row">
+                          <button type="button" className="btn success">
+                            ✓ Approve
+                          </button>
+                          <button
+                            type="button"
+                            className="btn outline-danger"
+                            onClick={() => setRejectingId(alert.id)}
+                          >
+                            ✕ Reject
+                          </button>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
-              </article>
-            )
-          })}
-      </div>
+              )}
+            </article>
+          )
+        })}
 
-      {selected.alerts.length === 0 && (
-        <p className="loaded-note">No active alerts for this pro bill.</p>
-      )}
-    </>
+        {!visibleAlerts.length && (
+          <p className="loaded-note">
+            No {alertTab} alerts for this pro bill.
+          </p>
+        )}
+      </div>
+    </div>
   )
 }
 

@@ -73,6 +73,26 @@ export const ENTITIES: Entity[] = [
         sentAt: mins(11),
         agent: 'Violation Detection Agent',
       },
+      {
+        id: 'a3b',
+        type: 'temp_deviation',
+        severity: severityForAlert('temp_deviation', 5),
+        status: 'approved',
+        message:
+          'VIOLATION: Reefer at 61.0°F but needs 66.0°F. Difference of 5°F. Reviewed and approved — driver corrected set point.',
+        sentAt: mins(180),
+        agent: 'Violation Detection Agent',
+      },
+      {
+        id: 'a3c',
+        type: 'temp_deviation',
+        severity: severityForAlert('temp_deviation', 3),
+        status: 'rejected',
+        message:
+          'VIOLATION: Reefer at 63.0°F but needs 66.0°F. Difference of 3°F. Rejected — readings outdated during defrost.',
+        sentAt: mins(240),
+        agent: 'Violation Detection Agent',
+      },
     ],
   },
   {
