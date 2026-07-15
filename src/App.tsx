@@ -471,6 +471,18 @@ export default function App() {
                 </section>
               ) : (
                 <section className="chat-side chatbot-chat panel-chat" aria-label="Chat">
+                  <div className="chat-side-head">
+                    <span className="chat-dock-icon" aria-hidden>
+                      <ChatIcon />
+                    </span>
+                    <div>
+                      <strong>Chat</strong>
+                      <p>Fixed composer + suggestions below</p>
+                    </div>
+                    {chatBadge > 0 && (
+                      <span className="chat-dock-badge">{chatBadge}</span>
+                    )}
+                  </div>
                   <AskAiPanel {...askAiProps} embedded />
                 </section>
               )}
