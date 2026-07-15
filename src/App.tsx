@@ -364,6 +364,30 @@ export default function App() {
               </div>
             </div>
             <div className="agent-panel-actions">
+              <div className="view-toggle panel-tabs" role="tablist" aria-label="Panel tabs">
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={chatbotTab === 'alerts'}
+                  className={chatbotTab === 'alerts' ? 'is-active' : ''}
+                  onClick={() => setChatbotTab('alerts')}
+                >
+                  Alerts
+                  {selected && (
+                    <span className="tab-count">{selected.alerts.length}</span>
+                  )}
+                </button>
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={chatbotTab === 'chat'}
+                  className={chatbotTab === 'chat' ? 'is-active' : ''}
+                  onClick={() => setChatbotTab('chat')}
+                >
+                  Chat
+                  {chatBadge > 0 && <span className="tab-count">{chatBadge}</span>}
+                </button>
+              </div>
               <button
                 type="button"
                 className="btn brand panel-expand"
@@ -430,33 +454,6 @@ export default function App() {
             </aside>
 
             <main className="agent-panel-main">
-              <div className="chatbot-toolbar">
-                <div className="view-toggle" role="tablist" aria-label="Panel tabs">
-                  <button
-                    type="button"
-                    role="tab"
-                    aria-selected={chatbotTab === 'alerts'}
-                    className={chatbotTab === 'alerts' ? 'is-active' : ''}
-                    onClick={() => setChatbotTab('alerts')}
-                  >
-                    Alerts
-                    {selected && (
-                      <span className="tab-count">{selected.alerts.length}</span>
-                    )}
-                  </button>
-                  <button
-                    type="button"
-                    role="tab"
-                    aria-selected={chatbotTab === 'chat'}
-                    className={chatbotTab === 'chat' ? 'is-active' : ''}
-                    onClick={() => setChatbotTab('chat')}
-                  >
-                    Chat
-                    {chatBadge > 0 && <span className="tab-count">{chatBadge}</span>}
-                  </button>
-                </div>
-              </div>
-
               {chatbotTab === 'alerts' ? (
                 <section className="detail-pane chatbot-pane">
                   {selected ? (
@@ -473,7 +470,7 @@ export default function App() {
                   )}
                 </section>
               ) : (
-                <section className="chat-side chatbot-chat" aria-label="Chat">
+                <section className="chat-side chatbot-chat panel-chat" aria-label="Chat">
                   <AskAiPanel {...askAiProps} embedded />
                 </section>
               )}

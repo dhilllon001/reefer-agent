@@ -22,8 +22,8 @@
   --success-bg: #e8f7f0;
   --danger: #c62828;
   --radius: 12px;
-  --font: 'Sora', system-ui, sans-serif;
-  --mono: 'IBM Plex Mono', ui-monospace, monospace;
+  --font: 'Inter', system-ui, -apple-system, sans-serif;
+  --mono: 'Inter', system-ui, -apple-system, sans-serif;
   --shadow: 0 12px 40px rgba(16, 20, 28, 0.08);
 }
 
@@ -100,7 +100,7 @@ textarea {
 /* Sidebar filters */
 .sidebar-filters {
   flex-shrink: 0;
-  padding: 0 12px 10px;
+  padding: 10px 12px 10px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
   display: flex;
   flex-direction: column;
@@ -2859,6 +2859,30 @@ textarea {
   flex-shrink: 0;
 }
 
+.panel-tabs {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.12);
+  padding: 3px;
+  border-radius: 10px;
+}
+
+.panel-tabs button {
+  color: #c5cae0;
+  padding: 6px 10px;
+  font-size: 0.75rem;
+  border-radius: 7px;
+}
+
+.panel-tabs button.is-active {
+  background: rgba(139, 116, 240, 0.95);
+  color: white;
+}
+
+.panel-tabs button:not(.is-active) .tab-count {
+  background: rgba(0, 0, 0, 0.28);
+  color: #e8ebf4;
+}
+
 .panel-expand {
   padding: 7px 12px;
   font-size: 0.78rem;
@@ -2880,6 +2904,7 @@ textarea {
 
 .agent-panel-sidebar .sidebar-filters {
   max-height: none;
+  padding-top: 12px;
 }
 
 .agent-panel-main {
@@ -2891,33 +2916,93 @@ textarea {
   color: var(--ink);
 }
 
-.agent-panel-main .chatbot-toolbar {
-  padding: 10px 12px 0;
-  flex-shrink: 0;
-}
-
 .agent-panel-main .chatbot-pane,
 .agent-panel-main .chatbot-chat {
   flex: 1;
   min-height: 0;
-  margin: 10px 12px 12px;
-  border-radius: 12px;
+  margin: 0;
+  border-radius: 0;
+  border: none;
+  box-shadow: none;
 }
 
-.agent-panel-main .chatbot-chat {
+.agent-panel-main .chatbot-pane {
+  padding: 14px 16px;
+  overflow: auto;
+  background: var(--white);
+}
+
+.agent-panel-main .panel-chat {
   display: flex;
   flex-direction: column;
-  background: var(--white);
-  border: 1px solid var(--line);
+  background: #f7f8fb;
   overflow: hidden;
 }
 
-.agent-panel-main .chatbot-chat .ask-ai-shell {
+.agent-panel-main .panel-chat .ask-ai-shell {
   flex: 1;
   min-height: 0;
   border: none;
   border-radius: 0;
   box-shadow: none;
+  background: transparent;
+}
+
+.agent-panel-main .panel-chat .ask-ai-body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.agent-panel-main .panel-chat .message-list {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 14px 16px 8px;
+  max-width: 560px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+.agent-panel-main .panel-chat .message {
+  max-width: 100%;
+}
+
+.agent-panel-main .panel-chat .message-bubble {
+  max-width: 100%;
+  font-size: 0.88rem;
+  line-height: 1.45;
+}
+
+.agent-panel-main .panel-chat .message-assistant .message-bubble {
+  background: var(--white);
+  border: 1px solid var(--line);
+}
+
+.agent-panel-main .panel-chat .chat-composer-dock {
+  max-width: 560px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 8px 16px 14px;
+  background: transparent;
+  border-top: none;
+}
+
+.agent-panel-main .panel-chat .chat-suggestions {
+  max-height: 64px;
+  margin-bottom: 8px;
+}
+
+.agent-panel-main .panel-chat .ask-ai-composer {
+  background: var(--white);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  box-shadow: 0 1px 2px rgba(16, 20, 28, 0.04);
+}
+
+.agent-panel-main .panel-chat .result-cards {
+  max-width: 100%;
 }
 
 @media (max-width: 900px) {
@@ -2928,6 +3013,10 @@ textarea {
     height: calc(100vh - 20px);
   }
 
+  .agent-panel-head {
+    flex-wrap: wrap;
+  }
+
   .agent-panel-body {
     grid-template-columns: 1fr;
     grid-template-rows: minmax(180px, 38%) 1fr;
@@ -2936,6 +3025,11 @@ textarea {
   .agent-panel-sidebar {
     border-right: none;
     border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .agent-panel-main .panel-chat .message-list,
+  .agent-panel-main .panel-chat .chat-composer-dock {
+    max-width: none;
   }
 }
 
