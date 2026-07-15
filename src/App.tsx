@@ -1052,57 +1052,51 @@ function DetailPane({
     <div className="detail-alerts">
       <div className="detail-header detail-header-product">
         <div className="detail-header-main">
-          <div className="detail-title">
-            <span className="pro-badge">P</span>
-            <div>
-              <div className="detail-title-row">
-                <h2>{selected.proBill}</h2>
-                <a
-                  className="ext-link"
-                  href={`#${selected.proBill}`}
-                  title="Open in TMS"
-                >
-                  ↗
-                </a>
-              </div>
-              <p className="detail-customer-link">
-                {selected.customer}
-                <a
-                  className="ext-link inline"
-                  href={`#customer-${selected.customer}`}
-                  title="Open customer"
-                >
-                  ↗
-                </a>
-              </p>
+          <div className="detail-title-block">
+            <div className="detail-title-row">
+              <h2>{selected.proBill}</h2>
+              <a
+                className="ext-link"
+                href={`#${selected.proBill}`}
+                title="Open in TMS"
+              >
+                ↗
+              </a>
             </div>
+            <p className="detail-customer-link">
+              {selected.customer}
+              <a
+                className="ext-link inline"
+                href={`#customer-${selected.customer}`}
+                title="Open customer"
+              >
+                ↗
+              </a>
+            </p>
           </div>
-          <div className="detail-probill-meta">
-            <span className={`status-pill shipment-${selected.status}`}>
-              {SHIPMENT_STATUS_LABEL[selected.status]}
-            </span>
-            <span className={`status-pill transit transit-${selected.transitStatus}`}>
-              {TRANSIT_STATUS_LABEL[selected.transitStatus]}
-            </span>
-            {activeAlerts.length > 0 && (
-              <span className="status-pill alert-active-pill">
-                {activeAlerts.length} alert{activeAlerts.length === 1 ? '' : 's'}
+
+          <div className="detail-header-side">
+            <div className="detail-probill-meta">
+              <span className={`status-pill shipment-${selected.status}`}>
+                {SHIPMENT_STATUS_LABEL[selected.status]}
               </span>
-            )}
+              <span className={`status-pill transit transit-${selected.transitStatus}`}>
+                {TRANSIT_STATUS_LABEL[selected.transitStatus]}
+              </span>
+              {activeAlerts.length > 0 && (
+                <span className="status-pill alert-active-pill">
+                  {activeAlerts.length} alert{activeAlerts.length === 1 ? '' : 's'}
+                </span>
+              )}
+              <span className={`sens-inline sens-${sensitivity}`}>
+                {SENSITIVITY_LABEL[sensitivity]} sensitivity
+              </span>
+            </div>
+            <p className="detail-activity-line">
+              Last activity:{' '}
+              {lastActivity ? formatAbsolute(lastActivity) : '—'}
+            </p>
           </div>
-          <p className="detail-activity-line">
-            <strong className={activeAlerts.length ? 'alert-count-text' : ''}>
-              {activeAlerts.length}
-            </strong>{' '}
-            active alert
-            {activeAlerts.length === 1 ? '' : 's'}
-            {lastActivity && (
-              <>
-                <span className="dot">·</span>
-                Last activity: {formatAbsolute(lastActivity)}
-              </>
-            )}
-          </p>
         </div>
       </div>
 

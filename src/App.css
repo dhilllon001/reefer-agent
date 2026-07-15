@@ -1771,15 +1771,35 @@ textarea {
 }
 
 .detail-header-product {
-  margin-bottom: 8px;
+  margin-bottom: 4px;
   padding-bottom: 12px;
-  border-bottom: none;
+  border-bottom: 1px solid var(--line);
+}
+
+.detail-header-product .detail-header-main {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px 24px;
+  flex-wrap: wrap;
+}
+
+.detail-title-block {
+  min-width: 0;
+  flex: 1;
 }
 
 .detail-title-row {
   display: flex;
   align-items: center;
   gap: 8px;
+}
+
+.detail-title-row h2 {
+  margin: 0;
+  font-size: 1.2rem;
+  letter-spacing: -0.02em;
+  color: var(--ink);
 }
 
 .detail-customer-link {
@@ -1796,15 +1816,12 @@ textarea {
   font-size: 0.85rem;
 }
 
-.detail-activity-line {
-  margin: 10px 0 0;
-  font-size: 0.84rem;
-  color: var(--ink-soft);
-}
-
-.detail-activity-line .dot {
-  margin: 0 6px;
-  opacity: 0.45;
+.detail-header-side {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+  min-width: 0;
 }
 
 .detail-probill-meta {
@@ -1812,13 +1829,20 @@ textarea {
   flex-wrap: wrap;
   gap: 6px;
   align-items: center;
-  margin-top: 10px;
+  justify-content: flex-end;
+  margin-top: 0;
 }
 
-.detail-probill-meta .meta-chip.soft {
-  background: var(--paper);
-  color: var(--ink-soft);
-  border: 1px solid var(--line);
+.detail-activity-line {
+  margin: 0;
+  font-size: 0.78rem;
+  color: var(--muted);
+  text-align: right;
+}
+
+.detail-activity-line .dot {
+  margin: 0 6px;
+  opacity: 0.45;
 }
 
 .detail-probill-meta .status-pill.shipment-in_transit {
@@ -1845,7 +1869,7 @@ textarea {
 }
 
 .company-settings-card {
-  margin: 0 0 14px;
+  margin: 12px 0 14px;
   padding: 12px 14px;
   border: 1px solid var(--line);
   border-radius: 12px;
