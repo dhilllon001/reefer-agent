@@ -2808,8 +2808,8 @@ textarea {
   position: fixed;
   right: 20px;
   bottom: 20px;
-  width: min(50vw, 760px);
-  height: min(86vh, 820px);
+  width: min(60vw, 912px);
+  height: min(95vh, 900px);
   z-index: 60;
   display: flex;
   flex-direction: column;
@@ -2868,7 +2868,7 @@ textarea {
   flex: 1;
   min-height: 0;
   display: grid;
-  grid-template-columns: minmax(200px, 40%) 1fr;
+  grid-template-columns: minmax(200px, 34%) 1fr;
 }
 
 .agent-panel-sidebar {
