@@ -2116,6 +2116,15 @@ textarea {
   color: var(--ink);
 }
 
+.entity-details-grid dt.value-alert,
+.entity-details-grid .value-alert {
+  color: var(--high);
+}
+
+.entity-details-grid div:has(.value-alert) dt {
+  color: #c62828;
+}
+
 .product-alert .action-row {
   gap: 12px;
 }

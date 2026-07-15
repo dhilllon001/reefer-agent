@@ -1250,7 +1250,7 @@ function DetailPane({
                       </div>
                       <div>
                         <dt>Alert type</dt>
-                        <dd>{ALERT_TYPE_LABEL[alert.type]}</dd>
+                        <dd className="value-alert">{ALERT_TYPE_LABEL[alert.type]}</dd>
                       </div>
                       <div>
                         <dt>Severity</dt>
@@ -1290,7 +1290,7 @@ function DetailPane({
                       </div>
                       <div>
                         <dt>Temp deviation</dt>
-                        <dd>
+                        <dd className="value-alert">
                           {tempDelta > 0 ? '+' : ''}
                           {tempDelta.toFixed(1)}°F
                         </dd>
