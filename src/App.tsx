@@ -565,6 +565,7 @@ export default function App() {
                   selected={selected}
                   rejectingId={rejectingId}
                   setRejectingId={setRejectingId}
+                  selectedCustomers={selectedCustomers}
                 />
               ) : (
                 <div className="empty-detail">
@@ -691,6 +692,7 @@ export default function App() {
                 selected={selected}
                 rejectingId={rejectingId}
                 setRejectingId={setRejectingId}
+                selectedCustomers={selectedCustomers}
                 onExitFullView={collapseToSmallView}
               />
             ) : (
@@ -742,52 +744,55 @@ function EntityList({
 }) {
   return (
     <div className="entity-list-wrap">
-      <div className="entity-list-head" aria-hidden>
-        <span>Pro bill</span>
-        <span>Customer</span>
-        <span>Alert</span>
-        <span>Sev</span>
-        <span>Sent</span>
-        <span>#</span>
-      </div>
-      <ul className="entity-list" role="listbox" aria-label="Pro bills">
+      <ul className="entity-list entity-cards" role="listbox" aria-label="Pro bills">
         {entities.map((entity) => {
           const alert = latestAlert(entity)
           const active = selectedId === entity.id
           const sev = entitySeverity(entity.alerts.map((a) => a.severity))
           const sensitivity = getCustomerSensitivity(entity.customer)
+          const profile = getCustomerProfile(entity.customer)
           return (
             <li key={entity.id}>
               <button
                 type="button"
-                className={`entity-row ${active ? 'is-active' : ''}`}
+                className={`entity-card ${active ? 'is-active' : ''}`}
                 onClick={() => onSelect(entity.id)}
                 role="option"
                 aria-selected={active}
               >
-                <span className="col-pro">
-                  <span className="pro-bill">{entity.proBill}</span>
-                  <span className={`sens-dot sens-${sensitivity}`} title={`${SENSITIVITY_LABEL[sensitivity]} customer sensitivity`} />
-                </span>
-                <span className="col-customer" title={entity.customer}>
-                  {entity.customer}
-                </span>
-                <span className="col-type">
-                  {alert ? ALERT_TYPE_LABEL[alert.type] : '—'}
-                </span>
-                <span className="col-sev">
-                  {sev ? (
-                    <span className={`sev-pill sev-${sev}`}>{sev[0].toUpperCase()}</span>
-                  ) : (
-                    '—'
-                  )}
-                </span>
-                <span className="col-time">
-                  {alert ? formatRelative(alert.sentAt) : '—'}
-                </span>
-                <span className="alert-count" title="Active alerts">
-                  {entity.alerts.length}
-                </span>
+                <div className="entity-card-top">
+                  <div className="entity-card-ids">
+                    <span className="pro-bill">{entity.proBill}</span>
+                    {sev && (
+                      <span className={`sev-pill sev-${sev}`}>{SEVERITY_LABEL[sev]}</span>
+                    )}
+                  </div>
+                  <span className="alert-count" title="Active alerts">
+                    {entity.alerts.length}
+                  </span>
+                </div>
+
+                <div className="entity-card-customer">
+                  <span className={`sens-dot sens-${sensitivity}`} />
+                  <span className="customer-name">{entity.customer}</span>
+                </div>
+
+                <div className="entity-card-meta">
+                  <span className="meta-chip type">
+                    {alert ? ALERT_TYPE_LABEL[alert.type] : 'No alert'}
+                  </span>
+                  <span className="meta-chip sens" title={SENSITIVITY_HINT[sensitivity]}>
+                    {SENSITIVITY_LABEL[sensitivity]} sens.
+                  </span>
+                  <span className="meta-chip time">
+                    {alert ? formatRelative(alert.sentAt) : '—'}
+                  </span>
+                </div>
+
+                <div className="entity-card-foot">
+                  <span>{profile.segment}</span>
+                  <span>{entity.trailer}</span>
+                </div>
               </button>
             </li>
           )
@@ -805,14 +810,21 @@ function DetailPane({
   rejectingId,
   setRejectingId,
   onExitFullView,
+  selectedCustomers = [],
 }: {
   selected: Entity
   rejectingId: string | null
   setRejectingId: (id: string | null) => void
   onExitFullView?: () => void
+  /** Only these customers appear in sensitivity info (fallback: current shipment customer) */
+  selectedCustomers?: string[]
 }) {
   const profile = getCustomerProfile(selected.customer)
   const sensitivity = profile.reeferSensitivity
+
+  const profilesToShow = selectedCustomers.length
+    ? CUSTOMER_PROFILES.filter((c) => selectedCustomers.includes(c.name))
+    : [profile]
 
   return (
     <>
@@ -867,6 +879,34 @@ function DetailPane({
           </span>
         </div>
       </div>
+
+      <section className="customer-focus-card" aria-label="Selected customer sensitivity">
+        <div className="customer-focus-head">
+          <h3>Customer reefer sensitivity</h3>
+          <p>
+            {selectedCustomers.length
+              ? `Showing ${profilesToShow.length} selected customer${profilesToShow.length === 1 ? '' : 's'}`
+              : 'Showing the customer on this pro bill only'}
+          </p>
+        </div>
+        <div className="customer-focus-grid">
+          {profilesToShow.map((c) => (
+            <article
+              key={c.name}
+              className={`customer-mini-card ${c.name === selected.customer ? 'is-current' : ''}`}
+            >
+              <div className="customer-mini-top">
+                <strong>{c.name}</strong>
+                <span className={`sev-pill sev-${c.reeferSensitivity}`}>
+                  {SENSITIVITY_LABEL[c.reeferSensitivity]}
+                </span>
+              </div>
+              <p>{c.segment}</p>
+              <small>{SENSITIVITY_HINT[c.reeferSensitivity]}</small>
+            </article>
+          ))}
+        </div>
+      </section>
 
       <div className="alert-stack">
         {[...selected.alerts]
@@ -994,34 +1034,12 @@ function DetailPane({
       </p>
 
       <details className="config-panel">
-        <summary>Customer sensitivity & temperature bands</summary>
+        <summary>Temperature deviation bands (no-alert ranges)</summary>
         <p className="config-note" style={{ marginTop: 12 }}>
-          Reefer sensitivity is set on the <strong>customer profile</strong> by the Charger
-          fleet team. Example: PharmaCare Logistics → High.
+          Within normal deviation for a band, alerts should not be generated. Customer reefer
+          sensitivity for selected customers is shown above.
         </p>
         <table>
-          <thead>
-            <tr>
-              <th>Customer</th>
-              <th>Segment</th>
-              <th>Sensitivity</th>
-            </tr>
-          </thead>
-          <tbody>
-            {CUSTOMER_PROFILES.map((c) => (
-              <tr key={c.name}>
-                <td>{c.name}</td>
-                <td>{c.segment}</td>
-                <td>
-                  <span className={`sev-pill sev-${c.reeferSensitivity}`}>
-                    {SENSITIVITY_LABEL[c.reeferSensitivity]}
-                  </span>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-        <table style={{ marginTop: 16 }}>
           <thead>
             <tr>
               <th>Temp band</th>
@@ -1105,16 +1123,27 @@ function AskAiPanel({
                       Showing {msg.listResult.shown} of{' '}
                       <strong>{msg.listResult.total}</strong> results
                     </div>
-                    <ul>
+                    <ul className="result-cards">
                       {msg.listResult.items.slice(0, 25).map((item) => (
                         <li key={item.proBill}>
-                          <button type="button" onClick={() => onSelectProBill(item.proBill)}>
-                            <span className="mono">{item.proBill}</span>
-                            <span>{item.customer}</span>
-                            <span>{item.alertType}</span>
-                            <span className={`sev-pill sev-${item.severity}`}>
-                              {item.severity}
-                            </span>
+                          <button
+                            type="button"
+                            className="result-card"
+                            onClick={() => onSelectProBill(item.proBill)}
+                          >
+                            <div className="result-card-top">
+                              <span className="mono">{item.proBill}</span>
+                              <span className={`sev-pill sev-${item.severity}`}>
+                                {item.severity}
+                              </span>
+                            </div>
+                            <div className="result-card-customer">{item.customer}</div>
+                            <div className="result-card-meta">
+                              <span>{item.alertType}</span>
+                              <span className={`sens-inline sens-${item.sensitivity}`}>
+                                {item.sensitivity} sens.
+                              </span>
+                            </div>
                           </button>
                         </li>
                       ))}
