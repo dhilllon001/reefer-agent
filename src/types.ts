@@ -4,8 +4,10 @@ export type Severity = 'high' | 'medium' | 'low'
 export type ReeferSensitivity = 'high' | 'medium' | 'low'
 export type ShipmentStatus = 'in_transit' | 'delivered' | 'canceled'
 export type AlertStatus = 'active' | 'pending' | 'approved' | 'rejected'
-/** Chat chrome: expanded panel, classic bottom bar, or floating icon */
-export type ChatMode = 'expanded' | 'bar' | 'fab'
+/** Full workbench vs compact chatbot shell */
+export type AppViewMode = 'full' | 'chatbot'
+/** In chatbot view: toggle between alerts and chat */
+export type ChatbotTab = 'alerts' | 'chat'
 
 export interface TempRangeConfig {
   id: string

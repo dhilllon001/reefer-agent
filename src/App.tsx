@@ -18,8 +18,9 @@ import {
 } from './lib/severity'
 import type {
   Alert,
+  AppViewMode,
+  ChatbotTab,
   ChatMessage,
-  ChatMode,
   Entity,
   ReeferSensitivity,
   Severity,
@@ -39,6 +40,8 @@ function entitySentAt(entity: Entity): number {
 
 export default function App() {
   const queue = useMemo(() => activeEntities(ENTITIES), [])
+  const [viewMode, setViewMode] = useState<AppViewMode>('full')
+  const [chatbotTab, setChatbotTab] = useState<ChatbotTab>('alerts')
   const [search, setSearch] = useState('')
   const [selectedCustomers, setSelectedCustomers] = useState<string[]>([])
   const [selectedSeverities, setSelectedSeverities] = useState<Severity[]>([])
@@ -46,8 +49,6 @@ export default function App() {
     ReeferSensitivity[]
   >([])
   const [customerMenuOpen, setCustomerMenuOpen] = useState(false)
-  /** Matches original product: workbench + dark Chat bar; expand for conversation */
-  const [chatMode, setChatMode] = useState<ChatMode>('bar')
   const [draft, setDraft] = useState('')
   const [rejectingId, setRejectingId] = useState<string | null>(null)
   const [messages, setMessages] = useState<ChatMessage[]>([
@@ -182,7 +183,7 @@ export default function App() {
     }
     setMessages((m) => [...m, userMsg, assistantMsg])
     setDraft('')
-    setChatMode('expanded')
+    if (viewMode === 'chatbot') setChatbotTab('chat')
   }
 
   const chatBadge = Math.max(0, messages.length - 1)
@@ -194,7 +195,10 @@ export default function App() {
     sendChat,
     onSelectProBill: (proBill: string) => {
       const found = queue.find((e) => e.proBill === proBill)
-      if (found) setSelectedId(found.id)
+      if (found) {
+        setSelectedId(found.id)
+        if (viewMode === 'chatbot') setChatbotTab('alerts')
+      }
     },
     prompts: [
       'List high sensitivity customers',
@@ -204,8 +208,306 @@ export default function App() {
     ],
   }
 
+  const filterBar = (
+    <>
+      <header className="top-bar">
+        <div className="top-bar-left">
+          <div className="customer-picker">
+            <button
+              type="button"
+              className="btn ghost"
+              onClick={() => setCustomerMenuOpen((o) => !o)}
+              aria-expanded={customerMenuOpen}
+            >
+              Customers
+              {selectedCustomers.length > 0 && (
+                <span className="chip-count">{selectedCustomers.length}</span>
+              )}
+              <span className="chev" aria-hidden>
+                ▾
+              </span>
+            </button>
+            {customerMenuOpen && (
+              <div className="dropdown" role="menu">
+                <div className="dropdown-head">
+                  <span>Select customers</span>
+                  {selectedCustomers.length > 0 && (
+                    <button
+                      type="button"
+                      className="linkish"
+                      onClick={() => setSelectedCustomers([])}
+                    >
+                      Clear
+                    </button>
+                  )}
+                </div>
+                {CUSTOMERS.map((c) => {
+                  const profile = getCustomerProfile(c)
+                  return (
+                    <label key={c} className="check-row">
+                      <input
+                        type="checkbox"
+                        checked={selectedCustomers.includes(c)}
+                        onChange={() => toggleCustomer(c)}
+                      />
+                      <span className="check-copy">
+                        <span>{c}</span>
+                        <small>
+                          {profile.segment} ·{' '}
+                          {SENSITIVITY_LABEL[profile.reeferSensitivity]} sensitivity
+                        </small>
+                      </span>
+                    </label>
+                  )
+                })}
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div className="pipeline-hint" title="Confirm batch vs live frequency with ops">
+          <span className="pipeline-dot" />
+          Detection cadence: every 5 min (batch)
+        </div>
+      </header>
+
+      <section className="insights-strip" aria-label="Queue insights">
+        <div className="insight-block">
+          <div className="insight-label">
+            <span>Alert severity</span>
+            <small>From the alert itself</small>
+          </div>
+          <div className="severity-filters" role="group" aria-label="Severity filters">
+            {(['high', 'medium', 'low'] as Severity[]).map((sev) => {
+              const on = selectedSeverities.includes(sev)
+              return (
+                <button
+                  key={sev}
+                  type="button"
+                  className={`sev-filter sev-${sev} ${on ? 'is-on' : ''}`}
+                  onClick={() => toggleSeverity(sev)}
+                  aria-pressed={on}
+                >
+                  <span className="sev-filter-label">{SEVERITY_LABEL[sev]}</span>
+                  <span className="sev-filter-count">{severityCounts[sev]}</span>
+                </button>
+              )
+            })}
+          </div>
+        </div>
+
+        <div className="insight-divider" aria-hidden />
+
+        <div className="insight-block">
+          <div className="insight-label">
+            <span>Customer reefer sensitivity</span>
+            <small>From customer profile (fleet-configured)</small>
+          </div>
+          <div
+            className="severity-filters"
+            role="group"
+            aria-label="Customer sensitivity filters"
+          >
+            {(['high', 'medium', 'low'] as ReeferSensitivity[]).map((level) => {
+              const on = selectedSensitivities.includes(level)
+              return (
+                <button
+                  key={level}
+                  type="button"
+                  className={`sev-filter sens-filter sens-${level} ${on ? 'is-on' : ''}`}
+                  onClick={() => toggleSensitivity(level)}
+                  aria-pressed={on}
+                  title={SENSITIVITY_HINT[level]}
+                >
+                  <span className="sev-filter-label">{SENSITIVITY_LABEL[level]}</span>
+                  <span className="sev-filter-count">{sensitivityCounts[level]}</span>
+                </button>
+              )
+            })}
+          </div>
+        </div>
+      </section>
+
+      {(selectedCustomers.length > 0 ||
+        selectedSeverities.length > 0 ||
+        selectedSensitivities.length > 0) && (
+        <div className="selected-customers" aria-live="polite">
+          <span className="label">Active filters</span>
+          <div className="chip-row">
+            {selectedCustomers.map((c) => (
+              <button
+                key={c}
+                type="button"
+                className="customer-chip"
+                onClick={() => toggleCustomer(c)}
+                title="Remove filter"
+              >
+                {c}
+                <span aria-hidden>×</span>
+              </button>
+            ))}
+            {selectedSeverities.map((s) => (
+              <button
+                key={`sev-${s}`}
+                type="button"
+                className={`customer-chip chip-sev-${s}`}
+                onClick={() => toggleSeverity(s)}
+              >
+                Severity: {SEVERITY_LABEL[s]}
+                <span aria-hidden>×</span>
+              </button>
+            ))}
+            {selectedSensitivities.map((s) => (
+              <button
+                key={`sens-${s}`}
+                type="button"
+                className={`customer-chip chip-sens-${s}`}
+                onClick={() => toggleSensitivity(s)}
+              >
+                Sensitivity: {SENSITIVITY_LABEL[s]}
+                <span aria-hidden>×</span>
+              </button>
+            ))}
+            <button
+              type="button"
+              className="linkish clear-all"
+              onClick={() => {
+                setSelectedCustomers([])
+                setSelectedSeverities([])
+                setSelectedSensitivities([])
+              }}
+            >
+              Clear all
+            </button>
+          </div>
+        </div>
+      )}
+    </>
+  )
+
+  /* ——— Chatbot view ——— */
+  if (viewMode === 'chatbot') {
+    return (
+      <div className="app app-chatbot">
+        <aside className="sidebar">
+          <header className="sidebar-brand">
+            <div className="brand-mark" aria-hidden>
+              <BulbIcon />
+            </div>
+            <div>
+              <h1>Reefer Agent</h1>
+              <p>
+                {filtered.length} of {queue.length} active
+              </p>
+            </div>
+          </header>
+
+          <div className="search-wrap">
+            <svg className="search-icon" viewBox="0 0 24 24" width="16" height="16" aria-hidden>
+              <circle cx="11" cy="11" r="7" stroke="currentColor" strokeWidth="1.8" fill="none" />
+              <path
+                d="M16.5 16.5 21 21"
+                stroke="currentColor"
+                strokeWidth="1.8"
+                strokeLinecap="round"
+              />
+            </svg>
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search by probill #..."
+              aria-label="Search entities"
+            />
+          </div>
+
+          <EntityList
+            entities={filtered}
+            selectedId={selected?.id ?? null}
+            onSelect={(id) => {
+              setSelectedId(id)
+              setChatbotTab('alerts')
+            }}
+          />
+
+          <footer className="sidebar-foot">
+            <span className="pulse" />
+            Chatbot view · toggle Alerts / Chat
+          </footer>
+        </aside>
+
+        <main className="main chatbot-main">
+          <div className="chatbot-toolbar">
+            <div className="view-toggle" role="tablist" aria-label="Chatbot panels">
+              <button
+                type="button"
+                role="tab"
+                aria-selected={chatbotTab === 'alerts'}
+                className={chatbotTab === 'alerts' ? 'is-active' : ''}
+                onClick={() => setChatbotTab('alerts')}
+              >
+                Alerts
+                {selected && (
+                  <span className="tab-count">{selected.alerts.length}</span>
+                )}
+              </button>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={chatbotTab === 'chat'}
+                className={chatbotTab === 'chat' ? 'is-active' : ''}
+                onClick={() => setChatbotTab('chat')}
+              >
+                Chat
+                {chatBadge > 0 && <span className="tab-count">{chatBadge}</span>}
+              </button>
+            </div>
+
+            <button
+              type="button"
+              className="btn brand enter-full"
+              onClick={() => setViewMode('full')}
+            >
+              Enter full view
+            </button>
+          </div>
+
+          {chatbotTab === 'alerts' ? (
+            <section className="detail-pane chatbot-pane">
+              {selected ? (
+                <DetailPane
+                  selected={selected}
+                  rejectingId={rejectingId}
+                  setRejectingId={setRejectingId}
+                />
+              ) : (
+                <div className="empty-detail">
+                  <h2>No shipment selected</h2>
+                  <p>Pick a pro bill from the left to review alerts.</p>
+                </div>
+              )}
+            </section>
+          ) : (
+            <section className="chat-side chatbot-chat" aria-label="Chat">
+              <div className="chat-side-head">
+                <span className="chat-dock-icon" aria-hidden>
+                  <ChatIcon />
+                </span>
+                <div>
+                  <strong>Chat</strong>
+                  <p>Ask about pro bills, severity, or sensitivity</p>
+                </div>
+              </div>
+              <AskAiPanel {...askAiProps} embedded />
+            </section>
+          )}
+        </main>
+      </div>
+    )
+  }
+
+  /* ——— Full view: list | detail | chat (30%) ——— */
   return (
-    <div className="app">
+    <div className="app app-full">
       <aside className="sidebar">
         <header className="sidebar-brand">
           <div className="brand-mark" aria-hidden>
@@ -223,7 +525,12 @@ export default function App() {
         <div className="search-wrap">
           <svg className="search-icon" viewBox="0 0 24 24" width="16" height="16" aria-hidden>
             <circle cx="11" cy="11" r="7" stroke="currentColor" strokeWidth="1.8" fill="none" />
-            <path d="M16.5 16.5 21 21" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+            <path
+              d="M16.5 16.5 21 21"
+              stroke="currentColor"
+              strokeWidth="1.8"
+              strokeLinecap="round"
+            />
           </svg>
           <input
             value={search}
@@ -233,60 +540,11 @@ export default function App() {
           />
         </div>
 
-        <ul className="entity-list" role="listbox" aria-label="Pro bills">
-          {filtered.map((entity) => {
-            const alert = latestAlert(entity)
-            const active = (selected?.id ?? '') === entity.id
-            const sev = entitySeverity(entity.alerts.map((a) => a.severity))
-            const sensitivity = getCustomerSensitivity(entity.customer)
-            const profile = getCustomerProfile(entity.customer)
-            return (
-              <li key={entity.id}>
-                <button
-                  type="button"
-                  className={`entity-row ${active ? 'is-active' : ''}`}
-                  onClick={() => setSelectedId(entity.id)}
-                  role="option"
-                  aria-selected={active}
-                >
-                  <div className="entity-main">
-                    <div className="entity-top">
-                      <span className="pro-bill">{entity.proBill}</span>
-                      {sev && (
-                        <span
-                          className={`sev-pill sev-${sev}`}
-                          title={`Alert severity: ${SEVERITY_LABEL[sev]}`}
-                        >
-                          {sev[0].toUpperCase()}
-                        </span>
-                      )}
-                    </div>
-                    <div className="entity-customer">{entity.customer}</div>
-                    <div className="entity-meta">
-                      {alert ? ALERT_TYPE_LABEL[alert.type] : 'No alert'}
-                      <span className="dot">·</span>
-                      <span
-                        className={`sens-inline sens-${sensitivity}`}
-                        title={SENSITIVITY_HINT[sensitivity]}
-                      >
-                        {SENSITIVITY_LABEL[sensitivity]} sens.
-                      </span>
-                      <span className="dot">·</span>
-                      {alert ? formatRelative(alert.sentAt) : '—'}
-                    </div>
-                    <div className="entity-segment">{profile.segment}</div>
-                  </div>
-                  <span className="alert-count" title="Active alerts">
-                    {entity.alerts.length}
-                  </span>
-                </button>
-              </li>
-            )
-          })}
-          {!filtered.length && (
-            <li className="empty-list">No pro bills match the current filters.</li>
-          )}
-        </ul>
+        <EntityList
+          entities={filtered}
+          selectedId={selected?.id ?? null}
+          onSelect={setSelectedId}
+        />
 
         <footer className="sidebar-foot">
           <span className="pulse" />
@@ -294,287 +552,123 @@ export default function App() {
         </footer>
       </aside>
 
-      <main className="main">
-        <header className="top-bar">
-          <div className="top-bar-left">
-            <div className="customer-picker">
-              <button
-                type="button"
-                className="btn ghost"
-                onClick={() => setCustomerMenuOpen((o) => !o)}
-                aria-expanded={customerMenuOpen}
-              >
-                Customers
-                {selectedCustomers.length > 0 && (
-                  <span className="chip-count">{selectedCustomers.length}</span>
-                )}
-                <span className="chev" aria-hidden>
-                  ▾
-                </span>
-              </button>
-              {customerMenuOpen && (
-                <div className="dropdown" role="menu">
-                  <div className="dropdown-head">
-                    <span>Select customers</span>
-                    {selectedCustomers.length > 0 && (
-                      <button
-                        type="button"
-                        className="linkish"
-                        onClick={() => setSelectedCustomers([])}
-                      >
-                        Clear
-                      </button>
-                    )}
-                  </div>
-                  {CUSTOMERS.map((c) => {
-                    const profile = getCustomerProfile(c)
-                    return (
-                      <label key={c} className="check-row">
-                        <input
-                          type="checkbox"
-                          checked={selectedCustomers.includes(c)}
-                          onChange={() => toggleCustomer(c)}
-                        />
-                        <span className="check-copy">
-                          <span>{c}</span>
-                          <small>
-                            {profile.segment} · {SENSITIVITY_LABEL[profile.reeferSensitivity]}{' '}
-                            sensitivity
-                          </small>
-                        </span>
-                      </label>
-                    )
-                  })}
-                </div>
-              )}
-            </div>
+      <main className="main full-main">
+        {filterBar}
 
-            <button
-              type="button"
-              className="btn ghost collapse-btn"
-              onClick={() => setChatMode(chatMode === 'expanded' ? 'bar' : 'expanded')}
-              title={
-                chatMode === 'expanded'
-                  ? 'Collapse chat to bottom bar'
-                  : 'Expand chat panel'
-              }
-            >
-              <ChatIcon small />
-              {chatMode === 'expanded' ? 'Collapse chat' : 'Expand chat'}
-            </button>
-          </div>
-
-          <div className="pipeline-hint" title="Confirm batch vs live frequency with ops">
-            <span className="pipeline-dot" />
-            Detection cadence: every 5 min (batch)
-          </div>
-        </header>
-
-        <section className="insights-strip" aria-label="Queue insights">
-          <div className="insight-block">
-            <div className="insight-label">
-              <span>Alert severity</span>
-              <small>From the alert itself</small>
-            </div>
-            <div className="severity-filters" role="group" aria-label="Severity filters">
-              {(['high', 'medium', 'low'] as Severity[]).map((sev) => {
-                const on = selectedSeverities.includes(sev)
-                return (
-                  <button
-                    key={sev}
-                    type="button"
-                    className={`sev-filter sev-${sev} ${on ? 'is-on' : ''}`}
-                    onClick={() => toggleSeverity(sev)}
-                    aria-pressed={on}
-                  >
-                    <span className="sev-filter-label">{SEVERITY_LABEL[sev]}</span>
-                    <span className="sev-filter-count">{severityCounts[sev]}</span>
-                  </button>
-                )
-              })}
-            </div>
-          </div>
-
-          <div className="insight-divider" aria-hidden />
-
-          <div className="insight-block">
-            <div className="insight-label">
-              <span>Customer reefer sensitivity</span>
-              <small>From customer profile (fleet-configured)</small>
-            </div>
-            <div
-              className="severity-filters"
-              role="group"
-              aria-label="Customer sensitivity filters"
-            >
-              {(['high', 'medium', 'low'] as ReeferSensitivity[]).map((level) => {
-                const on = selectedSensitivities.includes(level)
-                return (
-                  <button
-                    key={level}
-                    type="button"
-                    className={`sev-filter sens-filter sens-${level} ${on ? 'is-on' : ''}`}
-                    onClick={() => toggleSensitivity(level)}
-                    aria-pressed={on}
-                    title={SENSITIVITY_HINT[level]}
-                  >
-                    <span className="sev-filter-label">{SENSITIVITY_LABEL[level]}</span>
-                    <span className="sev-filter-count">{sensitivityCounts[level]}</span>
-                  </button>
-                )
-              })}
-            </div>
-          </div>
-        </section>
-
-        {(selectedCustomers.length > 0 ||
-          selectedSeverities.length > 0 ||
-          selectedSensitivities.length > 0) && (
-          <div className="selected-customers" aria-live="polite">
-            <span className="label">Active filters</span>
-            <div className="chip-row">
-              {selectedCustomers.map((c) => (
-                <button
-                  key={c}
-                  type="button"
-                  className="customer-chip"
-                  onClick={() => toggleCustomer(c)}
-                  title="Remove filter"
-                >
-                  {c}
-                  <span aria-hidden>×</span>
-                </button>
-              ))}
-              {selectedSeverities.map((s) => (
-                <button
-                  key={`sev-${s}`}
-                  type="button"
-                  className={`customer-chip chip-sev-${s}`}
-                  onClick={() => toggleSeverity(s)}
-                >
-                  Severity: {SEVERITY_LABEL[s]}
-                  <span aria-hidden>×</span>
-                </button>
-              ))}
-              {selectedSensitivities.map((s) => (
-                <button
-                  key={`sens-${s}`}
-                  type="button"
-                  className={`customer-chip chip-sens-${s}`}
-                  onClick={() => toggleSensitivity(s)}
-                >
-                  Sensitivity: {SENSITIVITY_LABEL[s]}
-                  <span aria-hidden>×</span>
-                </button>
-              ))}
-              <button
-                type="button"
-                className="linkish clear-all"
-                onClick={() => {
-                  setSelectedCustomers([])
-                  setSelectedSeverities([])
-                  setSelectedSensitivities([])
-                }}
-              >
-                Clear all
-              </button>
-            </div>
-          </div>
-        )}
-
-        <div
-          className={`workspace chat-mode-${chatMode} ${
-            chatMode === 'expanded' ? 'chat-open' : ''
-          }`}
-        >
+        <div className="workspace-split">
           <section className="detail-pane">
             {selected ? (
               <DetailPane
                 selected={selected}
                 rejectingId={rejectingId}
                 setRejectingId={setRejectingId}
+                onExitFullView={() => {
+                  setViewMode('chatbot')
+                  setChatbotTab('alerts')
+                }}
               />
             ) : (
               <div className="empty-detail">
+                <div className="empty-detail-top">
+                  <button
+                    type="button"
+                    className="exit-full-btn"
+                    onClick={() => setViewMode('chatbot')}
+                    title="Exit full view"
+                  >
+                    <ExitIcon />
+                    Exit full view
+                  </button>
+                </div>
                 <h2>No shipment selected</h2>
                 <p>Adjust filters or clear search to see active pro bills.</p>
               </div>
             )}
           </section>
 
-          {/* Classic product chat chrome — bar like the original Reefer Agent */}
-          {chatMode !== 'fab' && (
-            <section
-              className={`chat-dock ${chatMode === 'expanded' ? 'is-expanded' : 'is-collapsed'}`}
-            >
-              <button
-                type="button"
-                className="chat-dock-bar"
-                onClick={() =>
-                  setChatMode((m) => (m === 'expanded' ? 'bar' : 'expanded'))
-                }
-                aria-expanded={chatMode === 'expanded'}
-              >
-                <span className="chat-dock-left">
-                  <span className="chat-dock-icon" aria-hidden>
-                    <ChatIcon />
-                  </span>
-                  <strong>Chat</strong>
-                </span>
-                <span className="chat-dock-right">
-                  {chatBadge > 0 && (
-                    <span className="chat-dock-badge">{chatBadge}</span>
-                  )}
-                  <span className="chat-dock-chevron" aria-hidden>
-                    {chatMode === 'expanded' ? '▾' : '▴'}
-                  </span>
-                </span>
-              </button>
-
-              {chatMode === 'expanded' && (
-                <div className="chat-dock-panel">
-                  <AskAiPanel
-                    {...askAiProps}
-                    embedded
-                    headerActions={
-                      <>
-                        <button
-                          type="button"
-                          className="text-action"
-                          onClick={() => setChatMode('bar')}
-                        >
-                          Collapse
-                        </button>
-                        <button
-                          type="button"
-                          className="text-action muted-action"
-                          onClick={() => setChatMode('fab')}
-                          title="Minimize to floating icon"
-                        >
-                          Minimize
-                        </button>
-                      </>
-                    }
-                  />
-                </div>
-              )}
-            </section>
-          )}
+          <aside className="chat-side" aria-label="Chat">
+            <div className="chat-side-head">
+              <span className="chat-dock-icon" aria-hidden>
+                <ChatIcon />
+              </span>
+              <div>
+                <strong>Chat</strong>
+                <p>Always available in full view</p>
+              </div>
+              {chatBadge > 0 && <span className="chat-dock-badge">{chatBadge}</span>}
+            </div>
+            <AskAiPanel {...askAiProps} embedded />
+          </aside>
         </div>
       </main>
-
-      {chatMode === 'fab' && (
-        <button
-          type="button"
-          className="fab-chat"
-          onClick={() => setChatMode('expanded')}
-          aria-label="Open Chat"
-        >
-          <ChatIcon />
-          {chatBadge > 0 && <span className="fab-badge">{chatBadge}</span>}
-        </button>
-      )}
     </div>
+  )
+}
+
+function EntityList({
+  entities,
+  selectedId,
+  onSelect,
+}: {
+  entities: Entity[]
+  selectedId: string | null
+  onSelect: (id: string) => void
+}) {
+  return (
+    <ul className="entity-list" role="listbox" aria-label="Pro bills">
+      {entities.map((entity) => {
+        const alert = latestAlert(entity)
+        const active = selectedId === entity.id
+        const sev = entitySeverity(entity.alerts.map((a) => a.severity))
+        const sensitivity = getCustomerSensitivity(entity.customer)
+        const profile = getCustomerProfile(entity.customer)
+        return (
+          <li key={entity.id}>
+            <button
+              type="button"
+              className={`entity-row ${active ? 'is-active' : ''}`}
+              onClick={() => onSelect(entity.id)}
+              role="option"
+              aria-selected={active}
+            >
+              <div className="entity-main">
+                <div className="entity-top">
+                  <span className="pro-bill">{entity.proBill}</span>
+                  {sev && (
+                    <span
+                      className={`sev-pill sev-${sev}`}
+                      title={`Alert severity: ${SEVERITY_LABEL[sev]}`}
+                    >
+                      {sev[0].toUpperCase()}
+                    </span>
+                  )}
+                </div>
+                <div className="entity-customer">{entity.customer}</div>
+                <div className="entity-meta">
+                  {alert ? ALERT_TYPE_LABEL[alert.type] : 'No alert'}
+                  <span className="dot">·</span>
+                  <span
+                    className={`sens-inline sens-${sensitivity}`}
+                    title={SENSITIVITY_HINT[sensitivity]}
+                  >
+                    {SENSITIVITY_LABEL[sensitivity]} sens.
+                  </span>
+                  <span className="dot">·</span>
+                  {alert ? formatRelative(alert.sentAt) : '—'}
+                </div>
+                <div className="entity-segment">{profile.segment}</div>
+              </div>
+              <span className="alert-count" title="Active alerts">
+                {entity.alerts.length}
+              </span>
+            </button>
+          </li>
+        )
+      })}
+      {!entities.length && (
+        <li className="empty-list">No pro bills match the current filters.</li>
+      )}
+    </ul>
   )
 }
 
@@ -582,10 +676,12 @@ function DetailPane({
   selected,
   rejectingId,
   setRejectingId,
+  onExitFullView,
 }: {
   selected: Entity
   rejectingId: string | null
   setRejectingId: (id: string | null) => void
+  onExitFullView?: () => void
 }) {
   const profile = getCustomerProfile(selected.customer)
   const sensitivity = profile.reeferSensitivity
@@ -624,6 +720,17 @@ function DetailPane({
           </p>
         </div>
         <div className="detail-badges">
+          {onExitFullView && (
+            <button
+              type="button"
+              className="exit-full-btn"
+              onClick={onExitFullView}
+              title="Exit full view — open chatbot view"
+            >
+              <ExitIcon />
+              Exit full view
+            </button>
+          )}
           <span className={`sens-badge sens-${sensitivity}`} title={SENSITIVITY_HINT[sensitivity]}>
             Cust. {SENSITIVITY_LABEL[sensitivity]}
           </span>
@@ -828,7 +935,6 @@ function AskAiPanel({
   onSelectProBill: (proBill: string) => void
   prompts: string[]
   headerActions?: ReactNode
-  /** When true, hide duplicate title — chat dock bar already shows Chat */
   embedded?: boolean
 }) {
   function onSubmit(e: FormEvent) {
@@ -951,6 +1057,20 @@ function ChatIcon({ small = false }: { small?: boolean }) {
         d="M5 18.5V8a3 3 0 0 1 3-3h8a3 3 0 0 1 3 3v6a3 3 0 0 1-3 3H9l-4 3.5Z"
         stroke="currentColor"
         strokeWidth="1.6"
+        strokeLinejoin="round"
+      />
+    </svg>
+  )
+}
+
+function ExitIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" aria-hidden>
+      <path
+        d="M9 6H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h3M14 16l4-4-4-4M18 12H10"
+        stroke="currentColor"
+        strokeWidth="1.7"
+        strokeLinecap="round"
         strokeLinejoin="round"
       />
     </svg>
