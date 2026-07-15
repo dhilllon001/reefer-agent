@@ -1894,6 +1894,13 @@ textarea {
   color: #b91c1c;
 }
 
+.alert-collapsed-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+}
+
 .alert-collapsed-meta .status-pill.shipment-in_transit {
   background: rgba(37, 99, 235, 0.14);
   border-color: rgba(37, 99, 235, 0.4);
