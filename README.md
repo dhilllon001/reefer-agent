@@ -2,6 +2,9 @@
 
 Interactive prototype for the Reefer Agent work queue and Ask AI panel.
 
+**Live demo:** [https://reefer-agent.vercel.app](https://reefer-agent.vercel.app)  
+**GitHub:** [https://github.com/dhilllon001/reefer-agent](https://github.com/dhilllon001/reefer-agent)
+
 ## What's included
 
 - Sidebar rows with **pro bill**, **customer**, **alert type**, alert severity, **customer reefer sensitivity**, and alert count
