@@ -591,16 +591,16 @@ function SidebarFilters({
   return (
     <section className="sidebar-filters" aria-label="Filters">
       <div className={`customer-picker sidebar-customer ${customerMenuOpen ? 'is-open' : ''}`}>
-        <span className="filter-section-label">Customers</span>
         <button
           type="button"
           className="sidebar-trigger"
           onClick={() => setCustomerMenuOpen((o) => !o)}
           aria-expanded={customerMenuOpen}
+          aria-label="Filter customers"
         >
           <span className="sidebar-trigger-value">
             {selectedCustomers.length
-              ? `${selectedCustomers.length} selected`
+              ? `${selectedCustomers.length} customers`
               : 'All customers'}
           </span>
           <span className="sidebar-chev" aria-hidden>
@@ -610,7 +610,7 @@ function SidebarFilters({
         {customerMenuOpen && (
           <div className="sidebar-dropdown" role="menu">
             <div className="sidebar-dropdown-search">
-              <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden>
+              <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden>
                 <circle cx="11" cy="11" r="7" stroke="currentColor" strokeWidth="1.8" fill="none" />
                 <path
                   d="M16.5 16.5 21 21"
@@ -628,7 +628,7 @@ function SidebarFilters({
               />
             </div>
             <div className="sidebar-dropdown-head">
-              <span>Select one or more</span>
+              <span>Customers</span>
               {selectedCustomers.length > 0 && (
                 <button type="button" className="sidebar-link" onClick={clearCustomers}>
                   Clear
@@ -661,9 +661,9 @@ function SidebarFilters({
         )}
       </div>
 
-      <div className="filter-group">
-        <span className="filter-section-label">Alert severity</span>
-        <div className="filter-pills" role="group" aria-label="Alert severity">
+      <div className="filter-row" role="group" aria-label="Alert severity">
+        <span className="filter-row-label">Sev</span>
+        <div className="filter-pills">
           {(['high', 'medium', 'low'] as Severity[]).map((sev) => {
             const on = selectedSeverities.includes(sev)
             return (
@@ -673,8 +673,9 @@ function SidebarFilters({
                 className={`filter-pill sev-${sev} ${on ? 'is-on' : ''}`}
                 onClick={() => toggleSeverity(sev)}
                 aria-pressed={on}
+                title={`${SEVERITY_LABEL[sev]} severity`}
               >
-                <span className="filter-pill-label">{SEVERITY_LABEL[sev]}</span>
+                <span className="filter-pill-label">{SEVERITY_LABEL[sev][0]}</span>
                 <span className="filter-pill-count">{severityCounts[sev]}</span>
               </button>
             )
@@ -682,9 +683,9 @@ function SidebarFilters({
         </div>
       </div>
 
-      <div className="filter-group">
-        <span className="filter-section-label">Customer sensitivity</span>
-        <div className="filter-pills" role="group" aria-label="Customer sensitivity">
+      <div className="filter-row" role="group" aria-label="Customer sensitivity">
+        <span className="filter-row-label">Sens</span>
+        <div className="filter-pills">
           {(['high', 'medium', 'low'] as ReeferSensitivity[]).map((level) => {
             const on = selectedSensitivities.includes(level)
             return (
@@ -696,7 +697,7 @@ function SidebarFilters({
                 aria-pressed={on}
                 title={SENSITIVITY_HINT[level]}
               >
-                <span className="filter-pill-label">{SENSITIVITY_LABEL[level]}</span>
+                <span className="filter-pill-label">{SENSITIVITY_LABEL[level][0]}</span>
                 <span className="filter-pill-count">{sensitivityCounts[level]}</span>
               </button>
             )
@@ -740,10 +741,10 @@ function SidebarFilters({
                 <span aria-hidden>×</span>
               </button>
             ))}
+            <button type="button" className="sidebar-link clear-all" onClick={clearAllFilters}>
+              Clear
+            </button>
           </div>
-          <button type="button" className="sidebar-link clear-all" onClick={clearAllFilters}>
-            Clear all
-          </button>
         </div>
       )}
     </section>
@@ -801,14 +802,8 @@ function EntityList({
                   <span className={`status-pill transit transit-${entity.transitStatus}`}>
                     {TRANSIT_STATUS_LABEL[entity.transitStatus]}
                   </span>
-                </div>
-
-                <div className="entity-card-meta">
                   <span className="meta-chip type">
                     {alert ? ALERT_TYPE_LABEL[alert.type] : 'No alert'}
-                  </span>
-                  <span className="meta-chip sens" title={SENSITIVITY_HINT[sensitivity]}>
-                    {SENSITIVITY_LABEL[sensitivity]} sens.
                   </span>
                   <span className="meta-chip time">
                     {alert ? formatRelative(alert.sentAt) : '—'}
@@ -816,7 +811,9 @@ function EntityList({
                 </div>
 
                 <div className="entity-card-foot">
-                  <span>{profile.segment}</span>
+                  <span>
+                    {profile.segment} · {SENSITIVITY_LABEL[sensitivity]} sens.
+                  </span>
                   <span>{entity.trailer}</span>
                 </div>
               </button>
