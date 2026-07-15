@@ -592,24 +592,22 @@ function SidebarFilters({
         <span className="filter-section-label">Customers</span>
         <button
           type="button"
-          className="customer-trigger sidebar-trigger"
+          className="sidebar-trigger"
           onClick={() => setCustomerMenuOpen((o) => !o)}
           aria-expanded={customerMenuOpen}
         >
-          <span className="customer-trigger-copy">
-            <span className="customer-trigger-value">
-              {selectedCustomers.length
-                ? `${selectedCustomers.length} selected`
-                : 'All customers'}
-            </span>
+          <span className="sidebar-trigger-value">
+            {selectedCustomers.length
+              ? `${selectedCustomers.length} selected`
+              : 'All customers'}
           </span>
-          <span className="chev" aria-hidden>
+          <span className="sidebar-chev" aria-hidden>
             ▾
           </span>
         </button>
         {customerMenuOpen && (
-          <div className="dropdown sidebar-dropdown" role="menu">
-            <div className="dropdown-search">
+          <div className="sidebar-dropdown" role="menu">
+            <div className="sidebar-dropdown-search">
               <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden>
                 <circle cx="11" cy="11" r="7" stroke="currentColor" strokeWidth="1.8" fill="none" />
                 <path
@@ -627,23 +625,23 @@ function SidebarFilters({
                 autoFocus
               />
             </div>
-            <div className="dropdown-head">
+            <div className="sidebar-dropdown-head">
               <span>Select one or more</span>
               {selectedCustomers.length > 0 && (
-                <button type="button" className="linkish sidebar-link" onClick={clearCustomers}>
+                <button type="button" className="sidebar-link" onClick={clearCustomers}>
                   Clear
                 </button>
               )}
             </div>
-            <div className="dropdown-scroll">
+            <div className="sidebar-dropdown-scroll">
               {filteredCustomers.map((profile) => (
-                <label key={profile.name} className="check-row sidebar-check">
+                <label key={profile.name} className="sidebar-check">
                   <input
                     type="checkbox"
                     checked={selectedCustomers.includes(profile.name)}
                     onChange={() => toggleCustomer(profile.name)}
                   />
-                  <span className="check-copy">
+                  <span className="sidebar-check-copy">
                     <span>{profile.name}</span>
                     <small>
                       {profile.segment} · {SENSITIVITY_LABEL[profile.reeferSensitivity]}
@@ -652,7 +650,9 @@ function SidebarFilters({
                 </label>
               ))}
               {!filteredCustomers.length && (
-                <p className="dropdown-empty">No customers match “{customerQuery}”.</p>
+                <p className="sidebar-dropdown-empty">
+                  No customers match “{customerQuery}”.
+                </p>
               )}
             </div>
           </div>
@@ -661,19 +661,19 @@ function SidebarFilters({
 
       <div className="filter-group">
         <span className="filter-section-label">Alert severity</span>
-        <div className="sidebar-filter-stack" role="group" aria-label="Alert severity">
+        <div className="filter-pills" role="group" aria-label="Alert severity">
           {(['high', 'medium', 'low'] as Severity[]).map((sev) => {
             const on = selectedSeverities.includes(sev)
             return (
               <button
                 key={sev}
                 type="button"
-                className={`sidebar-filter-btn sev-${sev} ${on ? 'is-on' : ''}`}
+                className={`filter-pill sev-${sev} ${on ? 'is-on' : ''}`}
                 onClick={() => toggleSeverity(sev)}
                 aria-pressed={on}
               >
-                <span>{SEVERITY_LABEL[sev]}</span>
-                <span className="sidebar-filter-count">{severityCounts[sev]}</span>
+                <span className="filter-pill-label">{SEVERITY_LABEL[sev]}</span>
+                <span className="filter-pill-count">{severityCounts[sev]}</span>
               </button>
             )
           })}
@@ -682,20 +682,20 @@ function SidebarFilters({
 
       <div className="filter-group">
         <span className="filter-section-label">Customer sensitivity</span>
-        <div className="sidebar-filter-stack" role="group" aria-label="Customer sensitivity">
+        <div className="filter-pills" role="group" aria-label="Customer sensitivity">
           {(['high', 'medium', 'low'] as ReeferSensitivity[]).map((level) => {
             const on = selectedSensitivities.includes(level)
             return (
               <button
                 key={level}
                 type="button"
-                className={`sidebar-filter-btn sens-${level} ${on ? 'is-on' : ''}`}
+                className={`filter-pill sens-${level} ${on ? 'is-on' : ''}`}
                 onClick={() => toggleSensitivity(level)}
                 aria-pressed={on}
                 title={SENSITIVITY_HINT[level]}
               >
-                <span>{SENSITIVITY_LABEL[level]}</span>
-                <span className="sidebar-filter-count">{sensitivityCounts[level]}</span>
+                <span className="filter-pill-label">{SENSITIVITY_LABEL[level]}</span>
+                <span className="filter-pill-count">{sensitivityCounts[level]}</span>
               </button>
             )
           })}
@@ -723,7 +723,7 @@ function SidebarFilters({
                 className={`sidebar-chip chip-sev-${s}`}
                 onClick={() => toggleSeverity(s)}
               >
-                {SEVERITY_LABEL[s]}
+                Sev {SEVERITY_LABEL[s]}
                 <span aria-hidden>×</span>
               </button>
             ))}
@@ -734,13 +734,13 @@ function SidebarFilters({
                 className={`sidebar-chip chip-sens-${s}`}
                 onClick={() => toggleSensitivity(s)}
               >
-                {SENSITIVITY_LABEL[s]} sens.
+                Sens {SENSITIVITY_LABEL[s]}
                 <span aria-hidden>×</span>
               </button>
             ))}
           </div>
           <button type="button" className="sidebar-link clear-all" onClick={clearAllFilters}>
-            Clear all filters
+            Clear all
           </button>
         </div>
       )}
@@ -832,11 +832,17 @@ function DetailPane({
   onExitFullView?: () => void
 }) {
   const pendingCount = selected.alerts.filter((a) => a.status === 'pending').length
+  const profile = getCustomerProfile(selected.customer)
+  const sensitivity = getCustomerSensitivity(selected.customer)
+  const tempDelta = selected.setTemp - selected.requiredTemp
+  const absDelta = Math.abs(tempDelta)
+  const direction =
+    tempDelta > 0 ? 'TOO HOT' : tempDelta < 0 ? 'TOO COLD' : 'ON TARGET'
 
   return (
     <>
-      <div className="detail-header detail-header-minimal">
-        <div>
+      <div className="detail-header detail-header-clean">
+        <div className="detail-header-main">
           <div className="detail-title">
             <span className="pro-badge">P</span>
             <h2>{selected.proBill}</h2>
@@ -844,7 +850,22 @@ function DetailPane({
               ↗
             </a>
           </div>
-          <p className="detail-customer-only">{selected.customer}</p>
+          <p className="detail-customer-line">
+            <strong>{selected.customer}</strong>
+            <span className="dot">·</span>
+            <span>{profile.segment}</span>
+            <span className="dot">·</span>
+            <span className={`sens-inline sens-${sensitivity}`}>
+              {SENSITIVITY_LABEL[sensitivity]} sensitivity
+            </span>
+          </p>
+          <p className="detail-route-line">
+            {selected.origin}
+            <span aria-hidden> → </span>
+            {selected.destination}
+            <span className="dot">·</span>
+            Trailer {selected.trailer}
+          </p>
         </div>
         <div className="detail-badges">
           {onExitFullView && (
@@ -859,10 +880,35 @@ function DetailPane({
             </button>
           )}
           {pendingCount > 0 && (
-            <span className="pending-badge">
-              {pendingCount} pending
-            </span>
+            <span className="pending-badge">{pendingCount} pending</span>
           )}
+        </div>
+      </div>
+
+      <div className="shipment-summary">
+        <div className="summary-cell">
+          <span className="summary-label">Required</span>
+          <span className="summary-value">{selected.requiredTemp.toFixed(1)}°F</span>
+        </div>
+        <div className="summary-cell">
+          <span className="summary-label">Set temp</span>
+          <span className="summary-value">{selected.setTemp.toFixed(1)}°F</span>
+        </div>
+        <div className="summary-cell">
+          <span className="summary-label">Deviation</span>
+          <span
+            className={`summary-value delta ${absDelta > 4 ? 'is-warn' : ''} ${absDelta > 10 ? 'is-critical' : ''}`}
+          >
+            {tempDelta > 0 ? '+' : ''}
+            {tempDelta.toFixed(1)}°F
+          </span>
+        </div>
+        <div className="summary-cell">
+          <span className="summary-label">Reefer</span>
+          <span className="summary-value">
+            {selected.reeferStatus}
+            {selected.reeferMode ? ` · ${selected.reeferMode}` : ''}
+          </span>
         </div>
       </div>
 
@@ -871,95 +917,162 @@ function DetailPane({
           .sort(
             (a, b) => new Date(b.sentAt).getTime() - new Date(a.sentAt).getTime(),
           )
-          .map((alert) => (
-            <article key={alert.id} className={`alert-card sev-border-${alert.severity}`}>
-              <div className="alert-card-head">
-                <div className="alert-status">
-                  <span className="status-dot" />
-                  <strong>ACTIVE</strong>
-                  <span className="type-tag">{ALERT_TYPE_LABEL[alert.type]}</span>
-                  <span className={`sev-pill sev-${alert.severity}`}>
-                    {SEVERITY_LABEL[alert.severity]}
-                  </span>
-                  <span className="pending-tag">Pending</span>
+          .map((alert) => {
+            const showTemp =
+              alert.type === 'temp_deviation' || alert.type === 'reefer_off'
+            const showMode = alert.type === 'mode_mismatch'
+
+            return (
+              <article
+                key={alert.id}
+                className={`alert-card sev-border-${alert.severity}`}
+              >
+                <div className="alert-card-head">
+                  <div className="alert-status">
+                    <span className={`sev-pill sev-${alert.severity}`}>
+                      {SEVERITY_LABEL[alert.severity]}
+                    </span>
+                    <span className="type-tag">{ALERT_TYPE_LABEL[alert.type]}</span>
+                    <span className="pending-tag">Pending</span>
+                  </div>
+                  <time dateTime={alert.sentAt} title={formatAbsolute(alert.sentAt)}>
+                    {formatRelative(alert.sentAt)}
+                  </time>
                 </div>
-                <time dateTime={alert.sentAt}>{formatRelative(alert.sentAt)}</time>
-              </div>
 
-              <p className="alert-message">{alert.message}</p>
+                <p className="alert-message">{alert.message}</p>
 
-              <div className="alert-facts">
-                <span>Trailer {selected.trailer}</span>
-                <span>Target {selected.requiredTemp.toFixed(1)}°F</span>
-                <span>Set {selected.setTemp.toFixed(1)}°F</span>
-                <span>Reefer {selected.reeferStatus}</span>
-                {selected.reeferMode && (
-                  <span>
-                    Mode {selected.reeferMode}
-                    {selected.requiredMode &&
-                      selected.requiredMode !== selected.reeferMode && (
-                        <em className="warn-inline"> (needs {selected.requiredMode})</em>
-                      )}
-                  </span>
-                )}
-              </div>
-
-              <div className="alert-actions">
-                {rejectingId === alert.id ? (
-                  <div className="reject-panel">
-                    <p>Please select a reason for rejecting this alert:</p>
-                    <div className="radio-list">
-                      {[
-                        'CF not updated',
-                        'Readings are old',
-                        'Probill data incorrect',
-                        'Defrost mode',
-                        'Other',
-                      ].map((r, i) => (
-                        <label key={r}>
-                          <input
-                            type="radio"
-                            name={`reject-${alert.id}`}
-                            defaultChecked={i === 0}
-                          />
-                          {r}
-                        </label>
-                      ))}
+                {showTemp && (
+                  <div className="deviation-banner">
+                    <div>
+                      <span className="deviation-label">Temperature deviation</span>
+                      <strong className={`deviation-delta sev-text-${alert.severity}`}>
+                        {tempDelta > 0 ? '+' : ''}
+                        {tempDelta.toFixed(1)}°F · {direction}
+                      </strong>
                     </div>
-                    <label className="notes-label">
-                      Notes *
-                      <textarea placeholder="Add notes explaining this rejection" rows={3} />
-                    </label>
+                    <div className="deviation-temps">
+                      <span>
+                        Needs <b>{selected.requiredTemp.toFixed(1)}°F</b>
+                      </span>
+                      <span>
+                        Set <b>{selected.setTemp.toFixed(1)}°F</b>
+                      </span>
+                      {selected.returnAirTemp != null && (
+                        <span>
+                          Return <b>{selected.returnAirTemp.toFixed(1)}°F</b>
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {showMode && (
+                  <div className="deviation-banner mode-banner">
+                    <div>
+                      <span className="deviation-label">Mode mismatch</span>
+                      <strong>
+                        {selected.reeferMode ?? '—'}
+                        <span aria-hidden> → </span>
+                        needs {selected.requiredMode ?? '—'}
+                      </strong>
+                    </div>
+                  </div>
+                )}
+
+                <dl className="alert-meta-grid">
+                  <div>
+                    <dt>Customer</dt>
+                    <dd>{selected.customer}</dd>
+                  </div>
+                  <div>
+                    <dt>Sensitivity</dt>
+                    <dd>
+                      <span className={`sens-inline sens-${sensitivity}`}>
+                        {SENSITIVITY_LABEL[sensitivity]}
+                      </span>
+                    </dd>
+                  </div>
+                  <div>
+                    <dt>Trailer</dt>
+                    <dd>{selected.trailer}</dd>
+                  </div>
+                  <div>
+                    <dt>Reefer status</dt>
+                    <dd>{selected.reeferStatus}</dd>
+                  </div>
+                  <div>
+                    <dt>Segment</dt>
+                    <dd>{profile.segment}</dd>
+                  </div>
+                  <div>
+                    <dt>Route</dt>
+                    <dd>
+                      {selected.origin} → {selected.destination}
+                    </dd>
+                  </div>
+                </dl>
+
+                <div className="alert-actions">
+                  {rejectingId === alert.id ? (
+                    <div className="reject-panel">
+                      <p>Please select a reason for rejecting this alert:</p>
+                      <div className="radio-list">
+                        {[
+                          'CF not updated',
+                          'Readings are old',
+                          'Probill data incorrect',
+                          'Defrost mode',
+                          'Other',
+                        ].map((r, i) => (
+                          <label key={r}>
+                            <input
+                              type="radio"
+                              name={`reject-${alert.id}`}
+                              defaultChecked={i === 0}
+                            />
+                            {r}
+                          </label>
+                        ))}
+                      </div>
+                      <label className="notes-label">
+                        Notes *
+                        <textarea
+                          placeholder="Add notes explaining this rejection"
+                          rows={3}
+                        />
+                      </label>
+                      <div className="action-row">
+                        <button
+                          type="button"
+                          className="btn ghost"
+                          onClick={() => setRejectingId(null)}
+                        >
+                          Cancel
+                        </button>
+                        <button type="button" className="btn danger">
+                          Reject alert
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
                     <div className="action-row">
+                      <button type="button" className="btn success">
+                        ✓ Approve
+                      </button>
                       <button
                         type="button"
-                        className="btn ghost"
-                        onClick={() => setRejectingId(null)}
+                        className="btn outline-danger"
+                        onClick={() => setRejectingId(alert.id)}
                       >
-                        Cancel
-                      </button>
-                      <button type="button" className="btn danger">
-                        Reject alert
+                        ✕ Reject
                       </button>
                     </div>
-                  </div>
-                ) : (
-                  <div className="action-row">
-                    <button type="button" className="btn success">
-                      ✓ Approve
-                    </button>
-                    <button
-                      type="button"
-                      className="btn outline-danger"
-                      onClick={() => setRejectingId(alert.id)}
-                    >
-                      ✕ Reject
-                    </button>
-                  </div>
-                )}
-              </div>
-            </article>
-          ))}
+                  )}
+                </div>
+              </article>
+            )
+          })}
       </div>
 
       {selected.alerts.length === 0 && (
