@@ -13,6 +13,8 @@ import {
   SENSITIVITY_HINT,
   SENSITIVITY_LABEL,
   SEVERITY_LABEL,
+  SHIPMENT_STATUS_LABEL,
+  TRANSIT_STATUS_LABEL,
 } from './lib/severity'
 import type {
   Alert,
@@ -792,6 +794,15 @@ function EntityList({
                   <span className="customer-name">{entity.customer}</span>
                 </div>
 
+                <div className="entity-card-status-row">
+                  <span className={`status-pill shipment-${entity.status}`}>
+                    {SHIPMENT_STATUS_LABEL[entity.status]}
+                  </span>
+                  <span className={`status-pill transit transit-${entity.transitStatus}`}>
+                    {TRANSIT_STATUS_LABEL[entity.transitStatus]}
+                  </span>
+                </div>
+
                 <div className="entity-card-meta">
                   <span className="meta-chip type">
                     {alert ? ALERT_TYPE_LABEL[alert.type] : 'No alert'}
@@ -850,6 +861,14 @@ function DetailPane({
               ↗
             </a>
           </div>
+          <div className="detail-status-row">
+            <span className={`status-pill shipment-${selected.status}`}>
+              {SHIPMENT_STATUS_LABEL[selected.status]}
+            </span>
+            <span className={`status-pill transit transit-${selected.transitStatus}`}>
+              {TRANSIT_STATUS_LABEL[selected.transitStatus]}
+            </span>
+          </div>
           <p className="detail-customer-line">
             <strong>{selected.customer}</strong>
             <span className="dot">·</span>
@@ -886,6 +905,18 @@ function DetailPane({
       </div>
 
       <div className="shipment-summary">
+        <div className="summary-cell">
+          <span className="summary-label">Status</span>
+          <span className="summary-value">
+            {SHIPMENT_STATUS_LABEL[selected.status]}
+          </span>
+        </div>
+        <div className="summary-cell">
+          <span className="summary-label">Transit</span>
+          <span className="summary-value">
+            {TRANSIT_STATUS_LABEL[selected.transitStatus]}
+          </span>
+        </div>
         <div className="summary-cell">
           <span className="summary-label">Required</span>
           <span className="summary-value">{selected.requiredTemp.toFixed(1)}°F</span>
@@ -984,6 +1015,14 @@ function DetailPane({
                   <div>
                     <dt>Customer</dt>
                     <dd>{selected.customer}</dd>
+                  </div>
+                  <div>
+                    <dt>ProBill status</dt>
+                    <dd>{SHIPMENT_STATUS_LABEL[selected.status]}</dd>
+                  </div>
+                  <div>
+                    <dt>Transit status</dt>
+                    <dd>{TRANSIT_STATUS_LABEL[selected.transitStatus]}</dd>
                   </div>
                   <div>
                     <dt>Sensitivity</dt>

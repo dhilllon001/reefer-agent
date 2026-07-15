@@ -2,7 +2,9 @@ import type {
   AlertType,
   ReeferSensitivity,
   Severity,
+  ShipmentStatus,
   TempRangeConfig,
+  TransitStatus,
 } from '../types'
 
 /**
@@ -71,6 +73,19 @@ export const SENSITIVITY_HINT: Record<ReeferSensitivity, string> = {
   high: 'Customer profile: pay close attention (e.g. pharma)',
   medium: 'Customer profile: standard temp-sensitive loads',
   low: 'Customer profile: more tolerant loads',
+}
+
+export const SHIPMENT_STATUS_LABEL: Record<ShipmentStatus, string> = {
+  in_transit: 'In transit',
+  delivered: 'Delivered',
+  canceled: 'Canceled',
+}
+
+export const TRANSIT_STATUS_LABEL: Record<TransitStatus, string> = {
+  on_route_pickup: 'On-route pick-up',
+  on_route_delivery: 'On-route delivery',
+  at_delivery: 'At delivery',
+  at_pickup: 'At pick-up',
 }
 
 /** Highest severity among active/pending alerts on an entity */

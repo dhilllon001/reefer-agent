@@ -1,6 +1,10 @@
 import { getCustomerSensitivity } from '../data/customers'
 import type { ChatMessage, Entity, ReeferSensitivity, Severity } from '../types'
-import { ALERT_TYPE_LABEL } from './severity'
+import {
+  ALERT_TYPE_LABEL,
+  SHIPMENT_STATUS_LABEL,
+  TRANSIT_STATUS_LABEL,
+} from './severity'
 import { formatAbsolute } from './format'
 
 function primaryAlert(entity: Entity) {
@@ -148,6 +152,7 @@ export function answerAskAi(
         role: 'assistant',
         content: [
           `**${entity.proBill}** — ${entity.customer}`,
+          `Status: **${SHIPMENT_STATUS_LABEL[entity.status]}** · Transit: **${TRANSIT_STATUS_LABEL[entity.transitStatus]}**`,
           `Customer reefer sensitivity: **${sensitivity.toUpperCase()}**`,
           `Trailer ${entity.trailer} · ${entity.origin} → ${entity.destination}`,
           `Required ${entity.requiredTemp}°F · Set ${entity.setTemp}°F · Reefer ${entity.reeferStatus}`,

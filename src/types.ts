@@ -3,6 +3,12 @@ export type Severity = 'high' | 'medium' | 'low'
 /** Customer-profile setting configured by Charger fleet team */
 export type ReeferSensitivity = 'high' | 'medium' | 'low'
 export type ShipmentStatus = 'in_transit' | 'delivered' | 'canceled'
+/** Operational transit stage for an active ProBill */
+export type TransitStatus =
+  | 'on_route_pickup'
+  | 'on_route_delivery'
+  | 'at_delivery'
+  | 'at_pickup'
 export type AlertStatus = 'active' | 'pending' | 'approved' | 'rejected'
 /** Full workbench vs compact chatbot shell */
 export type AppViewMode = 'full' | 'chatbot'
@@ -31,7 +37,10 @@ export interface Entity {
   proBill: string
   customer: string
   trailer: string
+  /** Lifecycle status (active queue vs delivered/canceled) */
   status: ShipmentStatus
+  /** Where the load is in transit right now */
+  transitStatus: TransitStatus
   origin: string
   destination: string
   requiredTemp: number
