@@ -557,8 +557,8 @@ textarea {
 }
 
 .status-pill.shipment-in_transit {
-  background: rgba(37, 99, 235, 0.12);
-  border-color: rgba(37, 99, 235, 0.28);
+  background: rgba(37, 99, 235, 0.14);
+  border-color: rgba(37, 99, 235, 0.4);
   color: #1d4ed8;
 }
 
@@ -575,21 +575,21 @@ textarea {
 }
 
 .status-pill.transit {
-  background: rgba(107, 77, 230, 0.12);
-  border-color: rgba(107, 77, 230, 0.28);
-  color: #5b3fc9;
+  background: rgba(37, 99, 235, 0.08);
+  border-color: rgba(59, 130, 246, 0.28);
+  color: #2563eb;
 }
 
 .entity-card .status-pill.shipment-in_transit {
-  background: rgba(96, 165, 250, 0.18);
-  border-color: rgba(147, 197, 253, 0.35);
-  color: #bfdbfe;
+  background: rgba(59, 130, 246, 0.22);
+  border-color: rgba(96, 165, 250, 0.45);
+  color: #93c5fd;
 }
 
 .entity-card .status-pill.transit {
-  background: rgba(167, 149, 255, 0.16);
-  border-color: rgba(196, 181, 253, 0.35);
-  color: #ddd6fe;
+  background: rgba(59, 130, 246, 0.14);
+  border-color: rgba(96, 165, 250, 0.28);
+  color: #bfdbfe;
 }
 
 .entity-card .status-pill.transit-at_pickup,
@@ -604,6 +604,12 @@ textarea {
   background: rgba(217, 119, 6, 0.12);
   border-color: rgba(217, 119, 6, 0.28);
   color: #b45309;
+}
+
+.status-pill.alert-active-pill {
+  background: rgba(214, 69, 69, 0.12);
+  border-color: rgba(214, 69, 69, 0.35);
+  color: #c62828;
 }
 
 .summary-cell {
@@ -1816,15 +1822,15 @@ textarea {
 }
 
 .detail-probill-meta .status-pill.shipment-in_transit {
-  background: rgba(37, 99, 235, 0.1);
-  border-color: rgba(37, 99, 235, 0.22);
+  background: rgba(37, 99, 235, 0.14);
+  border-color: rgba(37, 99, 235, 0.4);
   color: #1d4ed8;
 }
 
 .detail-probill-meta .status-pill.transit {
-  background: rgba(107, 77, 230, 0.1);
-  border-color: rgba(107, 77, 230, 0.22);
-  color: #5b3fc9;
+  background: rgba(37, 99, 235, 0.08);
+  border-color: rgba(59, 130, 246, 0.3);
+  color: #2563eb;
 }
 
 .detail-probill-meta .status-pill.transit-at_pickup,
@@ -1834,23 +1840,70 @@ textarea {
   color: #b45309;
 }
 
-.alert-collapsed-meta {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin-top: 10px;
+.alert-count-text {
+  color: var(--high);
+}
+
+.company-settings-card {
+  margin: 0 0 14px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: #f8fafc;
+}
+
+.company-settings-card h3 {
+  margin: 0 0 10px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.company-settings-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px 14px;
+  margin: 0;
+}
+
+.company-settings-grid dt {
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 3px;
+}
+
+.company-settings-grid dd {
+  margin: 0;
+  font-size: 0.84rem;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.product-alert .type-tag {
+  background: rgba(214, 69, 69, 0.12);
+  color: #c62828;
+}
+
+.product-alert .pending-tag {
+  background: rgba(214, 69, 69, 0.1);
+  color: #b91c1c;
 }
 
 .alert-collapsed-meta .status-pill.shipment-in_transit {
-  background: rgba(37, 99, 235, 0.1);
-  border-color: rgba(37, 99, 235, 0.22);
+  background: rgba(37, 99, 235, 0.14);
+  border-color: rgba(37, 99, 235, 0.4);
   color: #1d4ed8;
 }
 
 .alert-collapsed-meta .status-pill.transit {
-  background: rgba(107, 77, 230, 0.1);
-  border-color: rgba(107, 77, 230, 0.22);
-  color: #5b3fc9;
+  background: rgba(37, 99, 235, 0.08);
+  border-color: rgba(59, 130, 246, 0.3);
+  color: #2563eb;
 }
 
 .entity-details-grid-wide {

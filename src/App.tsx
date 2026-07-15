@@ -10,6 +10,7 @@ import { formatAbsolute, formatRelative } from './lib/format'
 import {
   ALERT_TYPE_LABEL,
   entitySeverity,
+  getTempBand,
   SENSITIVITY_HINT,
   SENSITIVITY_LABEL,
   SEVERITY_LABEL,
@@ -1045,6 +1046,7 @@ function DetailPane({
   const profile = getCustomerProfile(selected.customer)
   const sensitivity = getCustomerSensitivity(selected.customer)
   const tempDelta = selected.setTemp - selected.requiredTemp
+  const tempBand = getTempBand(selected.requiredTemp)
 
   return (
     <div className="detail-alerts">
@@ -1082,13 +1084,17 @@ function DetailPane({
             <span className={`status-pill transit transit-${selected.transitStatus}`}>
               {TRANSIT_STATUS_LABEL[selected.transitStatus]}
             </span>
-            <span className={`sens-inline sens-${sensitivity}`}>
-              {SENSITIVITY_LABEL[sensitivity]} sensitivity
-            </span>
-            <span className="meta-chip soft">{profile.segment}</span>
+            {activeAlerts.length > 0 && (
+              <span className="status-pill alert-active-pill">
+                {activeAlerts.length} alert{activeAlerts.length === 1 ? '' : 's'}
+              </span>
+            )}
           </div>
           <p className="detail-activity-line">
-            <strong>{activeAlerts.length}</strong> active alert
+            <strong className={activeAlerts.length ? 'alert-count-text' : ''}>
+              {activeAlerts.length}
+            </strong>{' '}
+            active alert
             {activeAlerts.length === 1 ? '' : 's'}
             {lastActivity && (
               <>
@@ -1099,6 +1105,44 @@ function DetailPane({
           </p>
         </div>
       </div>
+
+      <section className="company-settings-card" aria-label="Company settings">
+        <h3>Company settings</h3>
+        <dl className="company-settings-grid">
+          <div>
+            <dt>Company</dt>
+            <dd>{selected.customer}</dd>
+          </div>
+          <div>
+            <dt>Segment</dt>
+            <dd>{profile.segment}</dd>
+          </div>
+          <div>
+            <dt>Reefer sensitivity</dt>
+            <dd>
+              <span className={`sens-inline sens-${sensitivity}`}>
+                {SENSITIVITY_LABEL[sensitivity]}
+              </span>
+            </dd>
+          </div>
+          <div>
+            <dt>Temp band</dt>
+            <dd>{tempBand?.label ?? 'Default'}</dd>
+          </div>
+          <div>
+            <dt>Normal deviation</dt>
+            <dd>±{tempBand?.normalDeviationF ?? 4}°F</dd>
+          </div>
+          <div>
+            <dt>Band range</dt>
+            <dd>
+              {tempBand
+                ? `${tempBand.minF}°F – ${tempBand.maxF}°F`
+                : 'Not configured'}
+            </dd>
+          </div>
+        </dl>
+      </section>
 
       <div className="alert-tabs" role="tablist" aria-label="Alert status">
         <button

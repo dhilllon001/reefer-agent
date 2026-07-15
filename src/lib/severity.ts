@@ -18,10 +18,13 @@ export const TEMP_RANGE_CONFIG: TempRangeConfig[] = [
 ]
 
 export function getNormalDeviation(requiredTemp: number): number {
-  const band = TEMP_RANGE_CONFIG.find(
+  return getTempBand(requiredTemp)?.normalDeviationF ?? 4
+}
+
+export function getTempBand(requiredTemp: number): TempRangeConfig | undefined {
+  return TEMP_RANGE_CONFIG.find(
     (r) => requiredTemp >= r.minF && requiredTemp <= r.maxF,
   )
-  return band?.normalDeviationF ?? 4
 }
 
 export function isWithinNormalDeviation(
