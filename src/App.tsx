@@ -48,7 +48,6 @@ export default function App() {
   const [selectedSensitivities, setSelectedSensitivities] = useState<
     ReeferSensitivity[]
   >([])
-  const [customerMenuOpen, setCustomerMenuOpen] = useState(false)
   const [customerQuery, setCustomerQuery] = useState('')
   const [draft, setDraft] = useState('')
   const [sidebarRail, setSidebarRail] = useState(false)
@@ -261,8 +260,6 @@ export default function App() {
   }
 
   const sidebarFiltersProps = {
-    customerMenuOpen,
-    setCustomerMenuOpen,
     customerQuery,
     setCustomerQuery,
     selectedCustomers,
@@ -271,9 +268,11 @@ export default function App() {
     clearCustomers: () => setSelectedCustomers([]),
     selectedSeverities,
     toggleSeverity,
+    clearSeverities: () => setSelectedSeverities([]),
     severityCounts,
     selectedSensitivities,
     toggleSensitivity,
+    clearSensitivities: () => setSelectedSensitivities([]),
     sensitivityCounts,
     clearAllFilters,
   }
@@ -551,8 +550,6 @@ export default function App() {
 }
 
 function SidebarFilters({
-  customerMenuOpen,
-  setCustomerMenuOpen,
   customerQuery,
   setCustomerQuery,
   selectedCustomers,
@@ -561,14 +558,14 @@ function SidebarFilters({
   clearCustomers,
   selectedSeverities,
   toggleSeverity,
+  clearSeverities,
   severityCounts,
   selectedSensitivities,
   toggleSensitivity,
+  clearSensitivities,
   sensitivityCounts,
   clearAllFilters,
 }: {
-  customerMenuOpen: boolean
-  setCustomerMenuOpen: (fn: (o: boolean) => boolean) => void
   customerQuery: string
   setCustomerQuery: (v: string) => void
   selectedCustomers: string[]
@@ -577,37 +574,59 @@ function SidebarFilters({
   clearCustomers: () => void
   selectedSeverities: Severity[]
   toggleSeverity: (sev: Severity) => void
+  clearSeverities: () => void
   severityCounts: Record<Severity, number>
   selectedSensitivities: ReeferSensitivity[]
   toggleSensitivity: (level: ReeferSensitivity) => void
+  clearSensitivities: () => void
   sensitivityCounts: Record<ReeferSensitivity, number>
   clearAllFilters: () => void
 }) {
+  const [openMenu, setOpenMenu] = useState<'customer' | 'severity' | 'sensitivity' | null>(
+    null,
+  )
+
   const hasActiveFilters =
     selectedCustomers.length > 0 ||
     selectedSeverities.length > 0 ||
     selectedSensitivities.length > 0
 
+  function toggleMenu(menu: 'customer' | 'severity' | 'sensitivity') {
+    setOpenMenu((current) => (current === menu ? null : menu))
+  }
+
+  const severityTrigger = selectedSeverities.length
+    ? selectedSeverities.map((s) => SEVERITY_LABEL[s]).join(', ')
+    : 'All severities'
+
+  const sensitivityTrigger = selectedSensitivities.length
+    ? selectedSensitivities.map((s) => SENSITIVITY_LABEL[s]).join(', ')
+    : 'All sensitivity'
+
   return (
     <section className="sidebar-filters" aria-label="Filters">
-      <div className={`customer-picker sidebar-customer ${customerMenuOpen ? 'is-open' : ''}`}>
+      <div
+        className={`sidebar-field ${openMenu === 'customer' ? 'is-open' : ''}`}
+      >
         <button
           type="button"
           className="sidebar-trigger"
-          onClick={() => setCustomerMenuOpen((o) => !o)}
-          aria-expanded={customerMenuOpen}
-          aria-label="Filter customers"
+          onClick={() => toggleMenu('customer')}
+          aria-expanded={openMenu === 'customer'}
+          aria-label="Filter by customer"
         >
           <span className="sidebar-trigger-value">
             {selectedCustomers.length
-              ? `${selectedCustomers.length} customers`
+              ? selectedCustomers.length === 1
+                ? selectedCustomers[0]
+                : `${selectedCustomers.length} customers`
               : 'All customers'}
           </span>
           <span className="sidebar-chev" aria-hidden>
             ▾
           </span>
         </button>
-        {customerMenuOpen && (
+        {openMenu === 'customer' && (
           <div className="sidebar-dropdown" role="menu">
             <div className="sidebar-dropdown-search">
               <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden>
@@ -661,47 +680,105 @@ function SidebarFilters({
         )}
       </div>
 
-      <div className="filter-row" role="group" aria-label="Alert severity">
-        <span className="filter-row-label">Sev</span>
-        <div className="filter-pills">
-          {(['high', 'medium', 'low'] as Severity[]).map((sev) => {
-            const on = selectedSeverities.includes(sev)
-            return (
-              <button
-                key={sev}
-                type="button"
-                className={`filter-pill sev-${sev} ${on ? 'is-on' : ''}`}
-                onClick={() => toggleSeverity(sev)}
-                aria-pressed={on}
-                title={`${SEVERITY_LABEL[sev]} severity`}
-              >
-                <span className="filter-pill-label">{SEVERITY_LABEL[sev][0]}</span>
-                <span className="filter-pill-count">{severityCounts[sev]}</span>
-              </button>
-            )
-          })}
+      <div className="sidebar-filter-pair">
+        <div
+          className={`sidebar-field ${openMenu === 'severity' ? 'is-open' : ''}`}
+        >
+          <button
+            type="button"
+            className="sidebar-trigger"
+            onClick={() => toggleMenu('severity')}
+            aria-expanded={openMenu === 'severity'}
+            aria-label="Filter by alert severity"
+          >
+            <span className="sidebar-trigger-value">{severityTrigger}</span>
+            <span className="sidebar-chev" aria-hidden>
+              ▾
+            </span>
+          </button>
+          {openMenu === 'severity' && (
+            <div className="sidebar-dropdown sidebar-dropdown-sm" role="menu">
+              <div className="sidebar-dropdown-head">
+                <span>Alert severity</span>
+                {selectedSeverities.length > 0 && (
+                  <button
+                    type="button"
+                    className="sidebar-link"
+                    onClick={clearSeverities}
+                  >
+                    Clear
+                  </button>
+                )}
+              </div>
+              <div className="sidebar-dropdown-scroll">
+                {(['high', 'medium', 'low'] as Severity[]).map((sev) => (
+                  <label key={sev} className="sidebar-check">
+                    <input
+                      type="checkbox"
+                      checked={selectedSeverities.includes(sev)}
+                      onChange={() => toggleSeverity(sev)}
+                    />
+                    <span className="sidebar-check-copy sidebar-check-inline">
+                      <span className={`filter-dot sev-${sev}`} />
+                      <span>{SEVERITY_LABEL[sev]}</span>
+                      <small className="filter-count-inline">{severityCounts[sev]}</small>
+                    </span>
+                  </label>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
-      </div>
 
-      <div className="filter-row" role="group" aria-label="Customer sensitivity">
-        <span className="filter-row-label">Sens</span>
-        <div className="filter-pills">
-          {(['high', 'medium', 'low'] as ReeferSensitivity[]).map((level) => {
-            const on = selectedSensitivities.includes(level)
-            return (
-              <button
-                key={level}
-                type="button"
-                className={`filter-pill sens-${level} ${on ? 'is-on' : ''}`}
-                onClick={() => toggleSensitivity(level)}
-                aria-pressed={on}
-                title={SENSITIVITY_HINT[level]}
-              >
-                <span className="filter-pill-label">{SENSITIVITY_LABEL[level][0]}</span>
-                <span className="filter-pill-count">{sensitivityCounts[level]}</span>
-              </button>
-            )
-          })}
+        <div
+          className={`sidebar-field ${openMenu === 'sensitivity' ? 'is-open' : ''}`}
+        >
+          <button
+            type="button"
+            className="sidebar-trigger"
+            onClick={() => toggleMenu('sensitivity')}
+            aria-expanded={openMenu === 'sensitivity'}
+            aria-label="Filter by customer sensitivity"
+          >
+            <span className="sidebar-trigger-value">{sensitivityTrigger}</span>
+            <span className="sidebar-chev" aria-hidden>
+              ▾
+            </span>
+          </button>
+          {openMenu === 'sensitivity' && (
+            <div className="sidebar-dropdown sidebar-dropdown-sm" role="menu">
+              <div className="sidebar-dropdown-head">
+                <span>Customer sensitivity</span>
+                {selectedSensitivities.length > 0 && (
+                  <button
+                    type="button"
+                    className="sidebar-link"
+                    onClick={clearSensitivities}
+                  >
+                    Clear
+                  </button>
+                )}
+              </div>
+              <div className="sidebar-dropdown-scroll">
+                {(['high', 'medium', 'low'] as ReeferSensitivity[]).map((level) => (
+                  <label key={level} className="sidebar-check" title={SENSITIVITY_HINT[level]}>
+                    <input
+                      type="checkbox"
+                      checked={selectedSensitivities.includes(level)}
+                      onChange={() => toggleSensitivity(level)}
+                    />
+                    <span className="sidebar-check-copy sidebar-check-inline">
+                      <span className={`filter-dot sens-${level}`} />
+                      <span>{SENSITIVITY_LABEL[level]}</span>
+                      <small className="filter-count-inline">
+                        {sensitivityCounts[level]}
+                      </small>
+                    </span>
+                  </label>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
@@ -726,7 +803,7 @@ function SidebarFilters({
                 className={`sidebar-chip chip-sev-${s}`}
                 onClick={() => toggleSeverity(s)}
               >
-                Sev {SEVERITY_LABEL[s]}
+                {SEVERITY_LABEL[s]} severity
                 <span aria-hidden>×</span>
               </button>
             ))}
@@ -737,7 +814,7 @@ function SidebarFilters({
                 className={`sidebar-chip chip-sens-${s}`}
                 onClick={() => toggleSensitivity(s)}
               >
-                Sens {SENSITIVITY_LABEL[s]}
+                {SENSITIVITY_LABEL[s]} sensitivity
                 <span aria-hidden>×</span>
               </button>
             ))}
