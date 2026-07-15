@@ -40,7 +40,7 @@ function entitySentAt(entity: Entity): number {
 
 export default function App() {
   const queue = useMemo(() => activeEntities(ENTITIES), [])
-  const [viewMode, setViewMode] = useState<AppViewMode>('full')
+  const [viewMode, setViewMode] = useState<AppViewMode>('launcher')
   const [chatbotTab, setChatbotTab] = useState<ChatbotTab>('alerts')
   const [search, setSearch] = useState('')
   const [selectedCustomers, setSelectedCustomers] = useState<string[]>([])
@@ -184,7 +184,7 @@ export default function App() {
     }
     setMessages((m) => [...m, userMsg, assistantMsg])
     setDraft('')
-    if (viewMode === 'chatbot') setChatbotTab('chat')
+    if (viewMode === 'panel') setChatbotTab('chat')
   }
 
   const chatBadge = Math.max(0, messages.length - 1)
@@ -242,13 +242,29 @@ export default function App() {
       const found = queue.find((e) => e.proBill === proBill)
       if (found) {
         setSelectedId(found.id)
-        if (viewMode === 'chatbot') setChatbotTab('alerts')
+        if (viewMode === 'panel') setChatbotTab('alerts')
       }
     },
   }
 
-  function collapseToSmallView() {
-    setViewMode('chatbot')
+  function openPanel() {
+    setViewMode('panel')
+    setChatbotTab('alerts')
+    setSidebarRail(false)
+  }
+
+  function closeToLauncher() {
+    setViewMode('launcher')
+    setSidebarRail(false)
+  }
+
+  function expandToFull() {
+    setViewMode('full')
+    setSidebarRail(false)
+  }
+
+  function minimizeToPanel() {
+    setViewMode('panel')
     setChatbotTab('alerts')
     setSidebarRail(false)
   }
@@ -277,131 +293,198 @@ export default function App() {
     clearAllFilters,
   }
 
-  /* ——— Chatbot view ——— */
-  if (viewMode === 'chatbot') {
+  const hostBackdrop = (
+    <div className="widget-backdrop" aria-hidden>
+      <div className="widget-backdrop-card">
+        <div className="brand-mark lg">
+          <BulbIcon />
+        </div>
+        <h1>Host application</h1>
+        <p>
+          Reefer Agent embeds as a chatbot. Open the icon to review alerts and chat
+          without leaving your current workflow.
+        </p>
+        <div className="widget-mini-stats">
+          <div>
+            <strong>{queue.length}</strong>
+            <span>Active</span>
+          </div>
+          <div>
+            <strong>{severityCounts.high}</strong>
+            <span>High sev</span>
+          </div>
+          <div>
+            <strong>{filtered.length}</strong>
+            <span>Filtered</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+
+  /* ——— Launcher: floating Reefer Agent icon ——— */
+  if (viewMode === 'launcher') {
     return (
-      <div className="app app-chatbot">
-        <aside className="sidebar">
-          <header className="sidebar-brand">
-            <div className="brand-mark" aria-hidden>
-              <BulbIcon />
-            </div>
-            <div className="brand-copy">
-              <h1>Reefer Agent</h1>
-              <p>
-                {filtered.length} of {queue.length} active
-              </p>
-            </div>
-          </header>
-
-          <SidebarFilters {...sidebarFiltersProps} />
-
-          <div className="sidebar-scroll">
-            <div className="search-wrap">
-            <svg className="search-icon" viewBox="0 0 24 24" width="16" height="16" aria-hidden>
-              <circle cx="11" cy="11" r="7" stroke="currentColor" strokeWidth="1.8" fill="none" />
-              <path
-                d="M16.5 16.5 21 21"
-                stroke="currentColor"
-                strokeWidth="1.8"
-                strokeLinecap="round"
-              />
-            </svg>
-            <input
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search by probill #..."
-              aria-label="Search entities"
-            />
-          </div>
-
-          <EntityList
-            entities={filtered}
-            selectedId={selected?.id ?? null}
-            onSelect={(id) => {
-              setSelectedId(id)
-              setChatbotTab('alerts')
-            }}
-          />
-          </div>
-
-          <footer className="sidebar-foot">
-            <span className="pulse" />
-            Chatbot view · toggle Alerts / Chat
-          </footer>
-        </aside>
-
-        <main className="main chatbot-main">
-          <div className="chatbot-toolbar">
-            <div className="view-toggle" role="tablist" aria-label="Chatbot panels">
-              <button
-                type="button"
-                role="tab"
-                aria-selected={chatbotTab === 'alerts'}
-                className={chatbotTab === 'alerts' ? 'is-active' : ''}
-                onClick={() => setChatbotTab('alerts')}
-              >
-                Alerts
-                {selected && (
-                  <span className="tab-count">{selected.alerts.length}</span>
-                )}
-              </button>
-              <button
-                type="button"
-                role="tab"
-                aria-selected={chatbotTab === 'chat'}
-                className={chatbotTab === 'chat' ? 'is-active' : ''}
-                onClick={() => setChatbotTab('chat')}
-              >
-                Chat
-                {chatBadge > 0 && <span className="tab-count">{chatBadge}</span>}
-              </button>
-            </div>
-
-            <button
-              type="button"
-              className="btn brand enter-full"
-              onClick={() => setViewMode('full')}
-            >
-              Enter full view
-            </button>
-          </div>
-
-          {chatbotTab === 'alerts' ? (
-            <section className="detail-pane chatbot-pane">
-              {selected ? (
-                <DetailPane
-                  selected={selected}
-                  rejectingId={rejectingId}
-                  setRejectingId={setRejectingId}
-                />
-              ) : (
-                <div className="empty-detail">
-                  <h2>No shipment selected</h2>
-                  <p>Pick a pro bill from the left to review alerts.</p>
-                </div>
-              )}
-            </section>
-          ) : (
-            <section className="chat-side chatbot-chat" aria-label="Chat">
-              <div className="chat-side-head">
-                <span className="chat-dock-icon" aria-hidden>
-                  <ChatIcon />
-                </span>
-                <div>
-                  <strong>Chat</strong>
-                  <p>Ask about pro bills, severity, or sensitivity</p>
-                </div>
-              </div>
-              <AskAiPanel {...askAiProps} embedded />
-            </section>
+      <div className="widget-shell">
+        {hostBackdrop}
+        <button
+          type="button"
+          className="fab-chat"
+          onClick={openPanel}
+          title="Open Reefer Agent"
+          aria-label="Open Reefer Agent chatbot"
+        >
+          <BulbIcon />
+          {queue.length > 0 && (
+            <span className="fab-badge" aria-hidden>
+              {queue.length > 9 ? '9+' : queue.length}
+            </span>
           )}
-        </main>
+        </button>
       </div>
     )
   }
 
-  /* ——— Full view: list | detail | chat (30%) ——— */
+  /* ——— Compact ~50% chatbot panel ——— */
+  if (viewMode === 'panel') {
+    return (
+      <div className="widget-shell">
+        {hostBackdrop}
+        <div className="agent-panel" role="dialog" aria-label="Reefer Agent">
+          <header className="agent-panel-head">
+            <div className="agent-panel-brand">
+              <div className="brand-mark" aria-hidden>
+                <BulbIcon />
+              </div>
+              <div>
+                <strong>Reefer Agent</strong>
+                <p>
+                  {filtered.length} of {queue.length} active
+                </p>
+              </div>
+            </div>
+            <div className="agent-panel-actions">
+              <button
+                type="button"
+                className="btn brand panel-expand"
+                onClick={expandToFull}
+                title="Expand to full workbench"
+              >
+                Expand
+              </button>
+              <button
+                type="button"
+                className="icon-btn-sidebar"
+                onClick={closeToLauncher}
+                title="Close Reefer Agent"
+                aria-label="Close Reefer Agent"
+              >
+                ×
+              </button>
+            </div>
+          </header>
+
+          <div className="agent-panel-body">
+            <aside className="sidebar agent-panel-sidebar">
+              <SidebarFilters {...sidebarFiltersProps} />
+              <div className="sidebar-scroll">
+                <div className="search-wrap">
+                  <svg
+                    className="search-icon"
+                    viewBox="0 0 24 24"
+                    width="16"
+                    height="16"
+                    aria-hidden
+                  >
+                    <circle
+                      cx="11"
+                      cy="11"
+                      r="7"
+                      stroke="currentColor"
+                      strokeWidth="1.8"
+                      fill="none"
+                    />
+                    <path
+                      d="M16.5 16.5 21 21"
+                      stroke="currentColor"
+                      strokeWidth="1.8"
+                      strokeLinecap="round"
+                    />
+                  </svg>
+                  <input
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    placeholder="Search probill…"
+                    aria-label="Search entities"
+                  />
+                </div>
+                <EntityList
+                  entities={filtered}
+                  selectedId={selected?.id ?? null}
+                  onSelect={(id) => {
+                    setSelectedId(id)
+                    setChatbotTab('alerts')
+                  }}
+                />
+              </div>
+            </aside>
+
+            <main className="agent-panel-main">
+              <div className="chatbot-toolbar">
+                <div className="view-toggle" role="tablist" aria-label="Panel tabs">
+                  <button
+                    type="button"
+                    role="tab"
+                    aria-selected={chatbotTab === 'alerts'}
+                    className={chatbotTab === 'alerts' ? 'is-active' : ''}
+                    onClick={() => setChatbotTab('alerts')}
+                  >
+                    Alerts
+                    {selected && (
+                      <span className="tab-count">{selected.alerts.length}</span>
+                    )}
+                  </button>
+                  <button
+                    type="button"
+                    role="tab"
+                    aria-selected={chatbotTab === 'chat'}
+                    className={chatbotTab === 'chat' ? 'is-active' : ''}
+                    onClick={() => setChatbotTab('chat')}
+                  >
+                    Chat
+                    {chatBadge > 0 && <span className="tab-count">{chatBadge}</span>}
+                  </button>
+                </div>
+              </div>
+
+              {chatbotTab === 'alerts' ? (
+                <section className="detail-pane chatbot-pane">
+                  {selected ? (
+                    <DetailPane
+                      selected={selected}
+                      rejectingId={rejectingId}
+                      setRejectingId={setRejectingId}
+                    />
+                  ) : (
+                    <div className="empty-detail">
+                      <h2>No shipment selected</h2>
+                      <p>Pick a pro bill from the left to review alerts.</p>
+                    </div>
+                  )}
+                </section>
+              ) : (
+                <section className="chat-side chatbot-chat" aria-label="Chat">
+                  <AskAiPanel {...askAiProps} embedded />
+                </section>
+              )}
+            </main>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  /* ——— Full view: list | detail | chat ——— */
   return (
     <div className={`app app-full ${sidebarRail ? 'sidebar-rail' : ''}`}>
       {sidebarRail ? (
@@ -420,8 +503,8 @@ export default function App() {
           <button
             type="button"
             className="rail-collapse-view"
-            onClick={collapseToSmallView}
-            title="Open small chatbot view"
+            onClick={minimizeToPanel}
+            title="Minimize to chatbot panel"
           >
             <CollapseIcon />
           </button>
@@ -451,8 +534,8 @@ export default function App() {
               <button
                 type="button"
                 className="icon-btn-sidebar"
-                title="Collapse to small Reefer Agent view"
-                onClick={collapseToSmallView}
+                title="Minimize to chatbot panel"
+                onClick={minimizeToPanel}
               >
                 <CollapseIcon />
               </button>
@@ -463,28 +546,41 @@ export default function App() {
 
           <div className="sidebar-scroll">
             <div className="search-wrap">
-            <svg className="search-icon" viewBox="0 0 24 24" width="16" height="16" aria-hidden>
-              <circle cx="11" cy="11" r="7" stroke="currentColor" strokeWidth="1.8" fill="none" />
-              <path
-                d="M16.5 16.5 21 21"
-                stroke="currentColor"
-                strokeWidth="1.8"
-                strokeLinecap="round"
+              <svg
+                className="search-icon"
+                viewBox="0 0 24 24"
+                width="16"
+                height="16"
+                aria-hidden
+              >
+                <circle
+                  cx="11"
+                  cy="11"
+                  r="7"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                  fill="none"
+                />
+                <path
+                  d="M16.5 16.5 21 21"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                  strokeLinecap="round"
+                />
+              </svg>
+              <input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search probill, customer, type…"
+                aria-label="Search entities"
               />
-            </svg>
-            <input
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search probill, customer, type…"
-              aria-label="Search entities"
-            />
-          </div>
+            </div>
 
-          <EntityList
-            entities={filtered}
-            selectedId={selected?.id ?? null}
-            onSelect={setSelectedId}
-          />
+            <EntityList
+              entities={filtered}
+              selectedId={selected?.id ?? null}
+              onSelect={setSelectedId}
+            />
           </div>
 
           <footer className="sidebar-foot">
@@ -500,6 +596,15 @@ export default function App() {
             <span className="pipeline-dot" />
             Detection cadence: every 5 min (batch)
           </div>
+          <button
+            type="button"
+            className="btn ghost minimize-panel-btn"
+            onClick={minimizeToPanel}
+            title="Minimize to chatbot panel"
+          >
+            <CollapseIcon />
+            Chatbot view
+          </button>
         </header>
 
         <div className="workspace-split">
@@ -509,21 +614,9 @@ export default function App() {
                 selected={selected}
                 rejectingId={rejectingId}
                 setRejectingId={setRejectingId}
-                onExitFullView={collapseToSmallView}
               />
             ) : (
               <div className="empty-detail">
-                <div className="empty-detail-top">
-                  <button
-                    type="button"
-                    className="exit-full-btn"
-                    onClick={collapseToSmallView}
-                    title="Exit full view"
-                  >
-                    <ExitIcon />
-                    Exit full view
-                  </button>
-                </div>
                 <h2>No shipment selected</h2>
                 <p>Adjust filters or clear search to see active pro bills.</p>
               </div>
@@ -548,6 +641,7 @@ export default function App() {
     </div>
   )
 }
+
 
 function SidebarFilters({
   customerQuery,
@@ -909,12 +1003,10 @@ function DetailPane({
   selected,
   rejectingId,
   setRejectingId,
-  onExitFullView,
 }: {
   selected: Entity
   rejectingId: string | null
   setRejectingId: (id: string | null) => void
-  onExitFullView?: () => void
 }) {
   const pendingCount = selected.alerts.filter((a) => a.status === 'pending').length
   const profile = getCustomerProfile(selected.customer)
@@ -961,17 +1053,6 @@ function DetailPane({
           </p>
         </div>
         <div className="detail-badges">
-          {onExitFullView && (
-            <button
-              type="button"
-              className="exit-full-btn"
-              onClick={onExitFullView}
-              title="Exit full view — open chatbot view"
-            >
-              <ExitIcon />
-              Exit full view
-            </button>
-          )}
           {pendingCount > 0 && (
             <span className="pending-badge">{pendingCount} pending</span>
           )}
@@ -1360,20 +1441,6 @@ function CollapseIcon() {
     <svg viewBox="0 0 24 24" width="15" height="15" fill="none" aria-hidden>
       <path
         d="M4 8h6V4M14 4h6v6M20 16v4h-6M10 20H4v-6"
-        stroke="currentColor"
-        strokeWidth="1.7"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  )
-}
-
-function ExitIcon() {
-  return (
-    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" aria-hidden>
-      <path
-        d="M9 6H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h3M14 16l4-4-4-4M18 12H10"
         stroke="currentColor"
         strokeWidth="1.7"
         strokeLinecap="round"

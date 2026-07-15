@@ -373,9 +373,18 @@ textarea {
 
 .main-toolbar {
   display: flex;
-  justify-content: flex-end;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
   padding: 8px 16px 0;
   flex-shrink: 0;
+}
+
+.minimize-panel-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
 }
 
 .detail-header-clean {
@@ -2793,6 +2802,141 @@ textarea {
   display: grid;
   place-items: center;
   border: 2px solid white;
+}
+
+.agent-panel {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  width: min(50vw, 760px);
+  height: min(86vh, 820px);
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  border-radius: 18px;
+  overflow: hidden;
+  border: 1px solid #2a2548;
+  background:
+    radial-gradient(ellipse 80% 50% at 10% 0%, rgba(107, 77, 230, 0.28), transparent 50%),
+    linear-gradient(165deg, #17132a 0%, #0f1220 55%, #12162a 100%);
+  color: #ece8ff;
+  box-shadow: 0 24px 60px rgba(12, 16, 32, 0.4);
+  animation: widget-in 0.22s ease;
+}
+
+.agent-panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  flex-shrink: 0;
+}
+
+.agent-panel-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.agent-panel-brand strong {
+  display: block;
+  font-size: 0.95rem;
+}
+
+.agent-panel-brand p {
+  margin: 2px 0 0;
+  font-size: 0.7rem;
+  color: var(--sidebar-muted);
+}
+
+.agent-panel-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.panel-expand {
+  padding: 7px 12px;
+  font-size: 0.78rem;
+}
+
+.agent-panel-body {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(200px, 40%) 1fr;
+}
+
+.agent-panel-sidebar {
+  min-height: 0;
+  border-right: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  flex-direction: column;
+}
+
+.agent-panel-sidebar .sidebar-filters {
+  max-height: none;
+}
+
+.agent-panel-main {
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  background: #f4f6fa;
+  color: var(--ink);
+}
+
+.agent-panel-main .chatbot-toolbar {
+  padding: 10px 12px 0;
+  flex-shrink: 0;
+}
+
+.agent-panel-main .chatbot-pane,
+.agent-panel-main .chatbot-chat {
+  flex: 1;
+  min-height: 0;
+  margin: 10px 12px 12px;
+  border-radius: 12px;
+}
+
+.agent-panel-main .chatbot-chat {
+  display: flex;
+  flex-direction: column;
+  background: var(--white);
+  border: 1px solid var(--line);
+  overflow: hidden;
+}
+
+.agent-panel-main .chatbot-chat .ask-ai-shell {
+  flex: 1;
+  min-height: 0;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+@media (max-width: 900px) {
+  .agent-panel {
+    right: 10px;
+    bottom: 10px;
+    width: calc(100vw - 20px);
+    height: calc(100vh - 20px);
+  }
+
+  .agent-panel-body {
+    grid-template-columns: 1fr;
+    grid-template-rows: minmax(180px, 38%) 1fr;
+  }
+
+  .agent-panel-sidebar {
+    border-right: none;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  }
 }
 
 .chat-widget {

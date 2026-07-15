@@ -10,9 +10,9 @@ export type TransitStatus =
   | 'at_delivery'
   | 'at_pickup'
 export type AlertStatus = 'active' | 'pending' | 'approved' | 'rejected'
-/** Full workbench vs compact chatbot shell */
-export type AppViewMode = 'full' | 'chatbot'
-/** In chatbot view: toggle between alerts and chat */
+/** Floating icon → half-screen panel → full workbench */
+export type AppViewMode = 'launcher' | 'panel' | 'full'
+/** In compact panel: toggle between alerts and chat */
 export type ChatbotTab = 'alerts' | 'chat'
 
 export interface TempRangeConfig {
