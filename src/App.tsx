@@ -1,7 +1,6 @@
 import { useMemo, useState, type FormEvent, type ReactNode } from 'react'
 import {
   CUSTOMER_PROFILES,
-  CUSTOMERS,
   getCustomerProfile,
   getCustomerSensitivity,
 } from './data/customers'
@@ -49,7 +48,9 @@ export default function App() {
     ReeferSensitivity[]
   >([])
   const [customerMenuOpen, setCustomerMenuOpen] = useState(false)
+  const [customerQuery, setCustomerQuery] = useState('')
   const [draft, setDraft] = useState('')
+  const [sidebarRail, setSidebarRail] = useState(false)
   const [rejectingId, setRejectingId] = useState<string | null>(null)
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
@@ -188,11 +189,55 @@ export default function App() {
 
   const chatBadge = Math.max(0, messages.length - 1)
 
+  const filteredCustomers = useMemo(() => {
+    const q = customerQuery.trim().toLowerCase()
+    if (!q) return CUSTOMER_PROFILES
+    return CUSTOMER_PROFILES.filter(
+      (c) =>
+        c.name.toLowerCase().includes(q) ||
+        c.segment.toLowerCase().includes(q) ||
+        c.reeferSensitivity.includes(q),
+    )
+  }, [customerQuery])
+
+  const chatSuggestions = useMemo(() => {
+    const q = draft.trim().toLowerCase()
+    const base = [
+      'List high sensitivity customers',
+      'List all high severity pro bills',
+      'How many temp deviations?',
+      'Show mode mismatch alerts',
+      'List reefer off alerts',
+      'Show PharmaCare Logistics pro bills',
+    ]
+    const fromPrompts = base
+      .filter((s) => !q || s.toLowerCase().includes(q))
+      .map((label) => ({ kind: 'prompt' as const, label, value: label }))
+
+    const fromEntities = filtered
+      .filter((e) => {
+        if (!q) return true
+        return (
+          e.proBill.toLowerCase().includes(q) ||
+          e.customer.toLowerCase().includes(q)
+        )
+      })
+      .slice(0, 4)
+      .map((e) => ({
+        kind: 'probill' as const,
+        label: `${e.proBill} · ${e.customer}`,
+        value: `Tell me about ${e.proBill}`,
+      }))
+
+    return [...fromPrompts.slice(0, 4), ...fromEntities].slice(0, 6)
+  }, [draft, filtered])
+
   const askAiProps = {
     messages,
     draft,
     setDraft,
     sendChat,
+    suggestions: chatSuggestions,
     onSelectProBill: (proBill: string) => {
       const found = queue.find((e) => e.proBill === proBill)
       if (found) {
@@ -200,37 +245,66 @@ export default function App() {
         if (viewMode === 'chatbot') setChatbotTab('alerts')
       }
     },
-    prompts: [
-      'List high sensitivity customers',
-      'List all high severity pro bills',
-      'How many temp deviations?',
-      'Show mode mismatch alerts',
-    ],
+  }
+
+  function collapseToSmallView() {
+    setViewMode('chatbot')
+    setChatbotTab('alerts')
+    setSidebarRail(false)
   }
 
   const filterBar = (
     <>
       <header className="top-bar">
         <div className="top-bar-left">
-          <div className="customer-picker">
+          <div className={`customer-picker wide ${customerMenuOpen ? 'is-open' : ''}`}>
             <button
               type="button"
-              className="btn ghost"
+              className="customer-trigger"
               onClick={() => setCustomerMenuOpen((o) => !o)}
               aria-expanded={customerMenuOpen}
             >
-              Customers
-              {selectedCustomers.length > 0 && (
-                <span className="chip-count">{selectedCustomers.length}</span>
-              )}
+              <span className="customer-trigger-copy">
+                <span className="customer-trigger-label">Customers</span>
+                <span className="customer-trigger-value">
+                  {selectedCustomers.length
+                    ? `${selectedCustomers.length} selected`
+                    : 'Search & select customers'}
+                </span>
+              </span>
               <span className="chev" aria-hidden>
                 ▾
               </span>
             </button>
             {customerMenuOpen && (
-              <div className="dropdown" role="menu">
+              <div className="dropdown customer-dropdown" role="menu">
+                <div className="dropdown-search">
+                  <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden>
+                    <circle
+                      cx="11"
+                      cy="11"
+                      r="7"
+                      stroke="currentColor"
+                      strokeWidth="1.8"
+                      fill="none"
+                    />
+                    <path
+                      d="M16.5 16.5 21 21"
+                      stroke="currentColor"
+                      strokeWidth="1.8"
+                      strokeLinecap="round"
+                    />
+                  </svg>
+                  <input
+                    value={customerQuery}
+                    onChange={(e) => setCustomerQuery(e.target.value)}
+                    placeholder="Search customers…"
+                    aria-label="Search customers"
+                    autoFocus
+                  />
+                </div>
                 <div className="dropdown-head">
-                  <span>Select customers</span>
+                  <span>Select one or more</span>
                   {selectedCustomers.length > 0 && (
                     <button
                       type="button"
@@ -241,33 +315,46 @@ export default function App() {
                     </button>
                   )}
                 </div>
-                {CUSTOMERS.map((c) => {
-                  const profile = getCustomerProfile(c)
-                  return (
-                    <label key={c} className="check-row">
+                <div className="dropdown-scroll">
+                  {filteredCustomers.map((profile) => (
+                    <label key={profile.name} className="check-row">
                       <input
                         type="checkbox"
-                        checked={selectedCustomers.includes(c)}
-                        onChange={() => toggleCustomer(c)}
+                        checked={selectedCustomers.includes(profile.name)}
+                        onChange={() => toggleCustomer(profile.name)}
                       />
                       <span className="check-copy">
-                        <span>{c}</span>
+                        <span>{profile.name}</span>
                         <small>
                           {profile.segment} ·{' '}
                           {SENSITIVITY_LABEL[profile.reeferSensitivity]} sensitivity
                         </small>
                       </span>
                     </label>
-                  )
-                })}
+                  ))}
+                  {!filteredCustomers.length && (
+                    <p className="dropdown-empty">No customers match “{customerQuery}”.</p>
+                  )}
+                </div>
               </div>
             )}
           </div>
         </div>
 
-        <div className="pipeline-hint" title="Confirm batch vs live frequency with ops">
-          <span className="pipeline-dot" />
-          Detection cadence: every 5 min (batch)
+        <div className="top-bar-right">
+          <div className="pipeline-hint" title="Confirm batch vs live frequency with ops">
+            <span className="pipeline-dot" />
+            Detection cadence: every 5 min (batch)
+          </div>
+          <button
+            type="button"
+            className="btn ghost collapse-control"
+            onClick={collapseToSmallView}
+            title="Collapse to small Reefer Agent chatbot view"
+          >
+            <CollapseIcon />
+            Collapse view
+          </button>
         </div>
       </header>
 
@@ -394,7 +481,7 @@ export default function App() {
             <div className="brand-mark" aria-hidden>
               <BulbIcon />
             </div>
-            <div>
+            <div className="brand-copy">
               <h1>Reefer Agent</h1>
               <p>
                 {filtered.length} of {queue.length} active
@@ -507,50 +594,92 @@ export default function App() {
 
   /* ——— Full view: list | detail | chat (30%) ——— */
   return (
-    <div className="app app-full">
-      <aside className="sidebar">
-        <header className="sidebar-brand">
-          <div className="brand-mark" aria-hidden>
-            <BulbIcon />
-          </div>
-          <div>
-            <h1>Reefer Agent</h1>
-            <p>
-              {filtered.length} of {queue.length} active
-              <span className="muted"> · {ENTITIES.length - queue.length} hidden</span>
-            </p>
-          </div>
-        </header>
+    <div className={`app app-full ${sidebarRail ? 'sidebar-rail' : ''}`}>
+      {sidebarRail ? (
+        <aside className="sidebar rail">
+          <button
+            type="button"
+            className="rail-expand"
+            onClick={() => setSidebarRail(false)}
+            title="Expand Reefer Agent list"
+          >
+            <div className="brand-mark" aria-hidden>
+              <BulbIcon />
+            </div>
+            <span>Expand</span>
+          </button>
+          <button
+            type="button"
+            className="rail-collapse-view"
+            onClick={collapseToSmallView}
+            title="Open small chatbot view"
+          >
+            <CollapseIcon />
+          </button>
+        </aside>
+      ) : (
+        <aside className="sidebar">
+          <header className="sidebar-brand">
+            <div className="brand-mark" aria-hidden>
+              <BulbIcon />
+            </div>
+            <div className="brand-copy">
+              <h1>Reefer Agent</h1>
+              <p>
+                {filtered.length} of {queue.length} active
+                <span className="muted"> · {ENTITIES.length - queue.length} hidden</span>
+              </p>
+            </div>
+            <div className="brand-actions">
+              <button
+                type="button"
+                className="icon-btn-sidebar"
+                title="Collapse list to rail"
+                onClick={() => setSidebarRail(true)}
+              >
+                ⟨
+              </button>
+              <button
+                type="button"
+                className="icon-btn-sidebar"
+                title="Collapse to small Reefer Agent view"
+                onClick={collapseToSmallView}
+              >
+                <CollapseIcon />
+              </button>
+            </div>
+          </header>
 
-        <div className="search-wrap">
-          <svg className="search-icon" viewBox="0 0 24 24" width="16" height="16" aria-hidden>
-            <circle cx="11" cy="11" r="7" stroke="currentColor" strokeWidth="1.8" fill="none" />
-            <path
-              d="M16.5 16.5 21 21"
-              stroke="currentColor"
-              strokeWidth="1.8"
-              strokeLinecap="round"
+          <div className="search-wrap">
+            <svg className="search-icon" viewBox="0 0 24 24" width="16" height="16" aria-hidden>
+              <circle cx="11" cy="11" r="7" stroke="currentColor" strokeWidth="1.8" fill="none" />
+              <path
+                d="M16.5 16.5 21 21"
+                stroke="currentColor"
+                strokeWidth="1.8"
+                strokeLinecap="round"
+              />
+            </svg>
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search probill, customer, type…"
+              aria-label="Search entities"
             />
-          </svg>
-          <input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search probill, customer, type…"
-            aria-label="Search entities"
+          </div>
+
+          <EntityList
+            entities={filtered}
+            selectedId={selected?.id ?? null}
+            onSelect={setSelectedId}
           />
-        </div>
 
-        <EntityList
-          entities={filtered}
-          selectedId={selected?.id ?? null}
-          onSelect={setSelectedId}
-        />
-
-        <footer className="sidebar-foot">
-          <span className="pulse" />
-          Sorted by alert sent time · newest first
-        </footer>
-      </aside>
+          <footer className="sidebar-foot">
+            <span className="pulse" />
+            Sorted by alert sent time · newest first
+          </footer>
+        </aside>
+      )}
 
       <main className="main full-main">
         {filterBar}
@@ -562,10 +691,7 @@ export default function App() {
                 selected={selected}
                 rejectingId={rejectingId}
                 setRejectingId={setRejectingId}
-                onExitFullView={() => {
-                  setViewMode('chatbot')
-                  setChatbotTab('alerts')
-                }}
+                onExitFullView={collapseToSmallView}
               />
             ) : (
               <div className="empty-detail">
@@ -573,7 +699,7 @@ export default function App() {
                   <button
                     type="button"
                     className="exit-full-btn"
-                    onClick={() => setViewMode('chatbot')}
+                    onClick={collapseToSmallView}
                     title="Exit full view"
                   >
                     <ExitIcon />
@@ -593,7 +719,7 @@ export default function App() {
               </span>
               <div>
                 <strong>Chat</strong>
-                <p>Always available in full view</p>
+                <p>Fixed composer + suggestions below</p>
               </div>
               {chatBadge > 0 && <span className="chat-dock-badge">{chatBadge}</span>}
             </div>
@@ -615,60 +741,62 @@ function EntityList({
   onSelect: (id: string) => void
 }) {
   return (
-    <ul className="entity-list" role="listbox" aria-label="Pro bills">
-      {entities.map((entity) => {
-        const alert = latestAlert(entity)
-        const active = selectedId === entity.id
-        const sev = entitySeverity(entity.alerts.map((a) => a.severity))
-        const sensitivity = getCustomerSensitivity(entity.customer)
-        const profile = getCustomerProfile(entity.customer)
-        return (
-          <li key={entity.id}>
-            <button
-              type="button"
-              className={`entity-row ${active ? 'is-active' : ''}`}
-              onClick={() => onSelect(entity.id)}
-              role="option"
-              aria-selected={active}
-            >
-              <div className="entity-main">
-                <div className="entity-top">
+    <div className="entity-list-wrap">
+      <div className="entity-list-head" aria-hidden>
+        <span>Pro bill</span>
+        <span>Customer</span>
+        <span>Alert</span>
+        <span>Sev</span>
+        <span>Sent</span>
+        <span>#</span>
+      </div>
+      <ul className="entity-list" role="listbox" aria-label="Pro bills">
+        {entities.map((entity) => {
+          const alert = latestAlert(entity)
+          const active = selectedId === entity.id
+          const sev = entitySeverity(entity.alerts.map((a) => a.severity))
+          const sensitivity = getCustomerSensitivity(entity.customer)
+          return (
+            <li key={entity.id}>
+              <button
+                type="button"
+                className={`entity-row ${active ? 'is-active' : ''}`}
+                onClick={() => onSelect(entity.id)}
+                role="option"
+                aria-selected={active}
+              >
+                <span className="col-pro">
                   <span className="pro-bill">{entity.proBill}</span>
-                  {sev && (
-                    <span
-                      className={`sev-pill sev-${sev}`}
-                      title={`Alert severity: ${SEVERITY_LABEL[sev]}`}
-                    >
-                      {sev[0].toUpperCase()}
-                    </span>
+                  <span className={`sens-dot sens-${sensitivity}`} title={`${SENSITIVITY_LABEL[sensitivity]} customer sensitivity`} />
+                </span>
+                <span className="col-customer" title={entity.customer}>
+                  {entity.customer}
+                </span>
+                <span className="col-type">
+                  {alert ? ALERT_TYPE_LABEL[alert.type] : '—'}
+                </span>
+                <span className="col-sev">
+                  {sev ? (
+                    <span className={`sev-pill sev-${sev}`}>{sev[0].toUpperCase()}</span>
+                  ) : (
+                    '—'
                   )}
-                </div>
-                <div className="entity-customer">{entity.customer}</div>
-                <div className="entity-meta">
-                  {alert ? ALERT_TYPE_LABEL[alert.type] : 'No alert'}
-                  <span className="dot">·</span>
-                  <span
-                    className={`sens-inline sens-${sensitivity}`}
-                    title={SENSITIVITY_HINT[sensitivity]}
-                  >
-                    {SENSITIVITY_LABEL[sensitivity]} sens.
-                  </span>
-                  <span className="dot">·</span>
+                </span>
+                <span className="col-time">
                   {alert ? formatRelative(alert.sentAt) : '—'}
-                </div>
-                <div className="entity-segment">{profile.segment}</div>
-              </div>
-              <span className="alert-count" title="Active alerts">
-                {entity.alerts.length}
-              </span>
-            </button>
-          </li>
-        )
-      })}
-      {!entities.length && (
-        <li className="empty-list">No pro bills match the current filters.</li>
-      )}
-    </ul>
+                </span>
+                <span className="alert-count" title="Active alerts">
+                  {entity.alerts.length}
+                </span>
+              </button>
+            </li>
+          )
+        })}
+        {!entities.length && (
+          <li className="empty-list">No pro bills match the current filters.</li>
+        )}
+      </ul>
+    </div>
   )
 }
 
@@ -924,7 +1052,7 @@ function AskAiPanel({
   setDraft,
   sendChat,
   onSelectProBill,
-  prompts,
+  suggestions = [],
   headerActions,
   embedded = false,
 }: {
@@ -933,7 +1061,7 @@ function AskAiPanel({
   setDraft: (v: string) => void
   sendChat: (text?: string) => void
   onSelectProBill: (proBill: string) => void
-  prompts: string[]
+  suggestions?: { kind: 'prompt' | 'probill'; label: string; value: string }[]
   headerActions?: ReactNode
   embedded?: boolean
 }) {
@@ -943,7 +1071,7 @@ function AskAiPanel({
   }
 
   return (
-    <>
+    <div className={`ask-ai-shell ${embedded ? 'is-embedded' : ''}`}>
       {!embedded && (
         <div className="ask-ai-toggle static-head">
           <span className="ask-ai-toggle-left">
@@ -964,19 +1092,6 @@ function AskAiPanel({
       )}
 
       <div className="ask-ai-body">
-        <div className="ask-ai-prompts">
-          {prompts.map((prompt) => (
-            <button
-              key={prompt}
-              type="button"
-              className="prompt-chip"
-              onClick={() => sendChat(prompt)}
-            >
-              {prompt}
-            </button>
-          ))}
-        </div>
-
         <div className="message-list" role="log" aria-live="polite">
           {messages.map((msg) => (
             <div key={msg.id} className={`message message-${msg.role}`}>
@@ -1012,27 +1127,44 @@ function AskAiPanel({
           ))}
         </div>
 
-        <form className="ask-ai-composer" onSubmit={onSubmit}>
-          <input
-            value={draft}
-            onChange={(e) => setDraft(e.target.value)}
-            placeholder="Message…"
-            aria-label="Chat message"
-          />
-          <button type="submit" className="send-btn" aria-label="Send">
-            <svg viewBox="0 0 24 24" width="18" height="18" fill="none">
-              <path
-                d="M5 12h12M13 6l6 6-6 6"
-                stroke="currentColor"
-                strokeWidth="1.8"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
-          </button>
-        </form>
+        <div className="chat-composer-dock">
+          {suggestions.length > 0 && (
+            <div className="chat-suggestions" aria-label="Suggestions">
+              {suggestions.map((s) => (
+                <button
+                  key={`${s.kind}-${s.label}`}
+                  type="button"
+                  className={`suggestion-chip kind-${s.kind}`}
+                  onClick={() => sendChat(s.value)}
+                >
+                  {s.kind === 'probill' ? 'Pro bill' : 'Ask'} · {s.label}
+                </button>
+              ))}
+            </div>
+          )}
+          <form className="ask-ai-composer" onSubmit={onSubmit}>
+            <input
+              value={draft}
+              onChange={(e) => setDraft(e.target.value)}
+              placeholder="Search or ask anything…"
+              aria-label="Chat message"
+              autoComplete="off"
+            />
+            <button type="submit" className="send-btn" aria-label="Send">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none">
+                <path
+                  d="M5 12h12M13 6l6 6-6 6"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </button>
+          </form>
+        </div>
       </div>
-    </>
+    </div>
   )
 }
 
@@ -1057,6 +1189,20 @@ function ChatIcon({ small = false }: { small?: boolean }) {
         d="M5 18.5V8a3 3 0 0 1 3-3h8a3 3 0 0 1 3 3v6a3 3 0 0 1-3 3H9l-4 3.5Z"
         stroke="currentColor"
         strokeWidth="1.6"
+        strokeLinejoin="round"
+      />
+    </svg>
+  )
+}
+
+function CollapseIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="15" height="15" fill="none" aria-hidden>
+      <path
+        d="M4 8h6V4M14 4h6v6M20 16v4h-6M10 20H4v-6"
+        stroke="currentColor"
+        strokeWidth="1.7"
+        strokeLinecap="round"
         strokeLinejoin="round"
       />
     </svg>
