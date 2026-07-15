@@ -1,0 +1,350 @@
+import type { Entity } from '../types'
+import { severityForAlert } from '../lib/severity'
+
+const now = Date.now()
+const mins = (m: number) => new Date(now - m * 60_000).toISOString()
+
+/**
+ * Demo fleet. Delivered / canceled shipments are included in the raw dataset
+ * so the UI can demonstrate they are filtered out of the active work queue.
+ */
+export const ENTITIES: Entity[] = [
+  {
+    id: '1',
+    proBill: 'P11441278',
+    customer: 'FreshFields Produce',
+    trailer: '1247CE',
+    status: 'in_transit',
+    origin: 'Brampton, ON',
+    destination: 'Chicago, IL',
+    requiredTemp: 60,
+    setTemp: 68,
+    returnAirTemp: 67.5,
+    reeferStatus: 'On',
+    reeferMode: 'Continuous',
+    requiredMode: 'Continuous',
+    alerts: [
+      {
+        id: 'a1',
+        type: 'temp_deviation',
+        severity: severityForAlert('temp_deviation', 8),
+        status: 'pending',
+        message:
+          'VIOLATION: Reefer at 68.0°F but needs 60.0°F. Difference of 8°F TOO HOT. Adjust temperature DOWN immediately.',
+        sentAt: mins(10),
+        agent: 'Violation Detection Agent',
+      },
+    ],
+  },
+  {
+    id: '2',
+    proBill: 'P11441670',
+    customer: 'Test_12Sept',
+    trailer: '1022CE',
+    status: 'in_transit',
+    origin: 'Brampton, ON',
+    destination: 'Woodstock, ON',
+    requiredTemp: 66,
+    setTemp: 50,
+    returnAirTemp: 53,
+    reeferStatus: 'On',
+    reeferMode: 'Start/Stop',
+    requiredMode: 'Continuous',
+    alerts: [
+      {
+        id: 'a2',
+        type: 'temp_deviation',
+        severity: severityForAlert('temp_deviation', 16),
+        status: 'pending',
+        message:
+          '[ESCALATION] VIOLATION: Reefer at 50.0°F but needs 66.0°F. Difference of 16°F TOO COLD. Adjust temperature UP immediately.',
+        sentAt: mins(11),
+        agent: 'Violation Detection Agent',
+      },
+      {
+        id: 'a3',
+        type: 'mode_mismatch',
+        severity: severityForAlert('mode_mismatch'),
+        status: 'pending',
+        message:
+          'MODE MISMATCH: Reefer is set to Start/Stop but instructions specify Continuous. Switch mode immediately.',
+        sentAt: mins(11),
+        agent: 'Violation Detection Agent',
+      },
+    ],
+  },
+  {
+    id: '3',
+    proBill: 'P11441941',
+    customer: 'Arctic Foods Co.',
+    trailer: '3310RF',
+    status: 'in_transit',
+    origin: 'Mississauga, ON',
+    destination: 'Detroit, MI',
+    requiredTemp: -5,
+    setTemp: 12,
+    reeferStatus: 'Off',
+    alerts: [
+      {
+        id: 'a4',
+        type: 'reefer_off',
+        severity: severityForAlert('reefer_off'),
+        status: 'pending',
+        message:
+          'CRITICAL: Reefer unit is OFF while load requires -5.0°F. Turn reefer ON immediately.',
+        sentAt: mins(4),
+        agent: 'Violation Detection Agent',
+      },
+    ],
+  },
+  {
+    id: '4',
+    proBill: 'P11438197',
+    customer: 'Metro Cold Chain',
+    trailer: '8801CE',
+    status: 'in_transit',
+    origin: 'Toronto, ON',
+    destination: 'Buffalo, NY',
+    requiredTemp: 38,
+    setTemp: 41,
+    reeferStatus: 'On',
+    alerts: [
+      {
+        id: 'a5',
+        type: 'temp_deviation',
+        severity: severityForAlert('temp_deviation', 3),
+        status: 'pending',
+        message:
+          'VIOLATION: Reefer at 41.0°F but needs 38.0°F. Difference of 3°F. Monitor and adjust if trend continues.',
+        sentAt: mins(28),
+        agent: 'Violation Detection Agent',
+      },
+    ],
+  },
+  {
+    id: '5',
+    proBill: 'P11440211',
+    customer: 'Summit Dairy',
+    trailer: '5520DF',
+    status: 'in_transit',
+    origin: 'Guelph, ON',
+    destination: 'Rochester, NY',
+    requiredTemp: 36,
+    setTemp: 43,
+    reeferStatus: 'On',
+    reeferMode: 'Continuous',
+    requiredMode: 'Continuous',
+    alerts: [
+      {
+        id: 'a6',
+        type: 'temp_deviation',
+        severity: severityForAlert('temp_deviation', 7),
+        status: 'active',
+        message:
+          'VIOLATION: Reefer at 43.0°F but needs 36.0°F. Difference of 7°F TOO HOT. Adjust temperature DOWN.',
+        sentAt: mins(45),
+        agent: 'Violation Detection Agent',
+      },
+    ],
+  },
+  {
+    id: '6',
+    proBill: 'P11439002',
+    customer: 'GreenLeaf Grocers',
+    trailer: '7712CE',
+    status: 'in_transit',
+    origin: 'Hamilton, ON',
+    destination: 'Cleveland, OH',
+    requiredTemp: 55,
+    setTemp: 55,
+    reeferStatus: 'On',
+    reeferMode: 'Start/Stop',
+    requiredMode: 'Continuous',
+    alerts: [
+      {
+        id: 'a7',
+        type: 'mode_mismatch',
+        severity: severityForAlert('mode_mismatch'),
+        status: 'pending',
+        message:
+          'MODE MISMATCH: Reefer is set to Start/Stop but instructions specify Continuous.',
+        sentAt: mins(60),
+        agent: 'Violation Detection Agent',
+      },
+    ],
+  },
+  {
+    id: '7',
+    proBill: 'P11442555',
+    customer: 'Arctic Foods Co.',
+    trailer: '2199RF',
+    status: 'in_transit',
+    origin: 'Vaughn, ON',
+    destination: 'Pittsburgh, PA',
+    requiredTemp: 0,
+    setTemp: 14,
+    reeferStatus: 'On',
+    alerts: [
+      {
+        id: 'a8',
+        type: 'temp_deviation',
+        severity: severityForAlert('temp_deviation', 14),
+        status: 'pending',
+        message:
+          'VIOLATION: Reefer at 14.0°F but needs 0.0°F. Difference of 14°F TOO HOT.',
+        sentAt: mins(2),
+        agent: 'Violation Detection Agent',
+      },
+    ],
+  },
+  {
+    id: '8',
+    proBill: 'P11440001',
+    customer: 'FreshFields Produce',
+    trailer: '1001CE',
+    status: 'in_transit',
+    origin: 'London, ON',
+    destination: 'Toledo, OH',
+    requiredTemp: 50,
+    setTemp: 54,
+    reeferStatus: 'On',
+    alerts: [
+      {
+        id: 'a9',
+        type: 'temp_deviation',
+        severity: severityForAlert('temp_deviation', 4),
+        status: 'pending',
+        message:
+          'VIOLATION: Reefer at 54.0°F but needs 50.0°F. Difference of 4°F.',
+        sentAt: mins(90),
+        agent: 'Violation Detection Agent',
+      },
+    ],
+  },
+  {
+    id: '9',
+    proBill: 'P11438888',
+    customer: 'Metro Cold Chain',
+    trailer: '4400CE',
+    status: 'delivered',
+    origin: 'Ottawa, ON',
+    destination: 'Montreal, QC',
+    requiredTemp: 34,
+    setTemp: 48,
+    reeferStatus: 'On',
+    alerts: [
+      {
+        id: 'a10',
+        type: 'temp_deviation',
+        severity: severityForAlert('temp_deviation', 14),
+        status: 'pending',
+        message: 'Should not appear — shipment delivered.',
+        sentAt: mins(5),
+        agent: 'Violation Detection Agent',
+      },
+    ],
+  },
+  {
+    id: '10',
+    proBill: 'P11437777',
+    customer: 'Summit Dairy',
+    trailer: '6600DF',
+    status: 'canceled',
+    origin: 'Kitchener, ON',
+    destination: 'Syracuse, NY',
+    requiredTemp: 36,
+    setTemp: 50,
+    reeferStatus: 'Off',
+    alerts: [
+      {
+        id: 'a11',
+        type: 'reefer_off',
+        severity: severityForAlert('reefer_off'),
+        status: 'pending',
+        message: 'Should not appear — pro bill canceled.',
+        sentAt: mins(3),
+        agent: 'Violation Detection Agent',
+      },
+    ],
+  },
+  {
+    id: '11',
+    proBill: 'P11443120',
+    customer: 'Test_12Sept',
+    trailer: '9088CE',
+    status: 'in_transit',
+    origin: 'Brampton, ON',
+    destination: 'Albany, NY',
+    requiredTemp: 60,
+    setTemp: 72,
+    reeferStatus: 'On',
+    alerts: [
+      {
+        id: 'a12',
+        type: 'temp_deviation',
+        severity: severityForAlert('temp_deviation', 12),
+        status: 'pending',
+        message:
+          'VIOLATION: Reefer at 72.0°F but needs 60.0°F. Difference of 12°F TOO HOT.',
+        sentAt: mins(18),
+        agent: 'Violation Detection Agent',
+      },
+    ],
+  },
+  {
+    id: '12',
+    proBill: 'P11440590',
+    customer: 'GreenLeaf Grocers',
+    trailer: '3344CE',
+    status: 'in_transit',
+    origin: 'Windsor, ON',
+    destination: 'Columbus, OH',
+    requiredTemp: 42,
+    setTemp: 48,
+    reeferStatus: 'On',
+    alerts: [
+      {
+        id: 'a13',
+        type: 'temp_deviation',
+        severity: severityForAlert('temp_deviation', 6),
+        status: 'pending',
+        message:
+          'VIOLATION: Reefer at 48.0°F but needs 42.0°F. Difference of 6°F TOO HOT.',
+        sentAt: mins(35),
+        agent: 'Violation Detection Agent',
+      },
+    ],
+  },
+  {
+    id: '13',
+    proBill: 'P11445001',
+    customer: 'PharmaCare Logistics',
+    trailer: 'PH901',
+    status: 'in_transit',
+    origin: 'Toronto, ON',
+    destination: 'Boston, MA',
+    requiredTemp: 36,
+    setTemp: 39,
+    returnAirTemp: 38.5,
+    reeferStatus: 'On',
+    reeferMode: 'Continuous',
+    requiredMode: 'Continuous',
+    alerts: [
+      {
+        id: 'a14',
+        type: 'temp_deviation',
+        severity: severityForAlert('temp_deviation', 3),
+        status: 'pending',
+        message:
+          'VIOLATION: Reefer at 39.0°F but needs 36.0°F. Difference of 3°F. High-sensitivity pharma load — review immediately.',
+        sentAt: mins(6),
+        agent: 'Violation Detection Agent',
+      },
+    ],
+  },
+]
+
+/** Active work queue — exclude delivered & canceled */
+export function activeEntities(all: Entity[] = ENTITIES): Entity[] {
+  return all.filter((e) => e.status === 'in_transit')
+}
