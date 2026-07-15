@@ -13,7 +13,6 @@ import {
   SENSITIVITY_HINT,
   SENSITIVITY_LABEL,
   SEVERITY_LABEL,
-  TEMP_RANGE_CONFIG,
 } from './lib/severity'
 import type {
   Alert,
@@ -253,224 +252,29 @@ export default function App() {
     setSidebarRail(false)
   }
 
-  const filterBar = (
-    <>
-      <header className="top-bar">
-        <div className="top-bar-left">
-          <div className={`customer-picker wide ${customerMenuOpen ? 'is-open' : ''}`}>
-            <button
-              type="button"
-              className="customer-trigger"
-              onClick={() => setCustomerMenuOpen((o) => !o)}
-              aria-expanded={customerMenuOpen}
-            >
-              <span className="customer-trigger-copy">
-                <span className="customer-trigger-label">Customers</span>
-                <span className="customer-trigger-value">
-                  {selectedCustomers.length
-                    ? `${selectedCustomers.length} selected`
-                    : 'Search & select customers'}
-                </span>
-              </span>
-              <span className="chev" aria-hidden>
-                ▾
-              </span>
-            </button>
-            {customerMenuOpen && (
-              <div className="dropdown customer-dropdown" role="menu">
-                <div className="dropdown-search">
-                  <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden>
-                    <circle
-                      cx="11"
-                      cy="11"
-                      r="7"
-                      stroke="currentColor"
-                      strokeWidth="1.8"
-                      fill="none"
-                    />
-                    <path
-                      d="M16.5 16.5 21 21"
-                      stroke="currentColor"
-                      strokeWidth="1.8"
-                      strokeLinecap="round"
-                    />
-                  </svg>
-                  <input
-                    value={customerQuery}
-                    onChange={(e) => setCustomerQuery(e.target.value)}
-                    placeholder="Search customers…"
-                    aria-label="Search customers"
-                    autoFocus
-                  />
-                </div>
-                <div className="dropdown-head">
-                  <span>Select one or more</span>
-                  {selectedCustomers.length > 0 && (
-                    <button
-                      type="button"
-                      className="linkish"
-                      onClick={() => setSelectedCustomers([])}
-                    >
-                      Clear
-                    </button>
-                  )}
-                </div>
-                <div className="dropdown-scroll">
-                  {filteredCustomers.map((profile) => (
-                    <label key={profile.name} className="check-row">
-                      <input
-                        type="checkbox"
-                        checked={selectedCustomers.includes(profile.name)}
-                        onChange={() => toggleCustomer(profile.name)}
-                      />
-                      <span className="check-copy">
-                        <span>{profile.name}</span>
-                        <small>
-                          {profile.segment} ·{' '}
-                          {SENSITIVITY_LABEL[profile.reeferSensitivity]} sensitivity
-                        </small>
-                      </span>
-                    </label>
-                  ))}
-                  {!filteredCustomers.length && (
-                    <p className="dropdown-empty">No customers match “{customerQuery}”.</p>
-                  )}
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
+  function clearAllFilters() {
+    setSelectedCustomers([])
+    setSelectedSeverities([])
+    setSelectedSensitivities([])
+  }
 
-        <div className="top-bar-right">
-          <div className="pipeline-hint" title="Confirm batch vs live frequency with ops">
-            <span className="pipeline-dot" />
-            Detection cadence: every 5 min (batch)
-          </div>
-          <button
-            type="button"
-            className="btn ghost collapse-control"
-            onClick={collapseToSmallView}
-            title="Collapse to small Reefer Agent chatbot view"
-          >
-            <CollapseIcon />
-            Collapse view
-          </button>
-        </div>
-      </header>
-
-      <section className="insights-strip" aria-label="Queue insights">
-        <div className="insight-block">
-          <div className="insight-label">
-            <span>Alert severity</span>
-            <small>From the alert itself</small>
-          </div>
-          <div className="severity-filters" role="group" aria-label="Severity filters">
-            {(['high', 'medium', 'low'] as Severity[]).map((sev) => {
-              const on = selectedSeverities.includes(sev)
-              return (
-                <button
-                  key={sev}
-                  type="button"
-                  className={`sev-filter sev-${sev} ${on ? 'is-on' : ''}`}
-                  onClick={() => toggleSeverity(sev)}
-                  aria-pressed={on}
-                >
-                  <span className="sev-filter-label">{SEVERITY_LABEL[sev]}</span>
-                  <span className="sev-filter-count">{severityCounts[sev]}</span>
-                </button>
-              )
-            })}
-          </div>
-        </div>
-
-        <div className="insight-divider" aria-hidden />
-
-        <div className="insight-block">
-          <div className="insight-label">
-            <span>Customer reefer sensitivity</span>
-            <small>From customer profile (fleet-configured)</small>
-          </div>
-          <div
-            className="severity-filters"
-            role="group"
-            aria-label="Customer sensitivity filters"
-          >
-            {(['high', 'medium', 'low'] as ReeferSensitivity[]).map((level) => {
-              const on = selectedSensitivities.includes(level)
-              return (
-                <button
-                  key={level}
-                  type="button"
-                  className={`sev-filter sens-filter sens-${level} ${on ? 'is-on' : ''}`}
-                  onClick={() => toggleSensitivity(level)}
-                  aria-pressed={on}
-                  title={SENSITIVITY_HINT[level]}
-                >
-                  <span className="sev-filter-label">{SENSITIVITY_LABEL[level]}</span>
-                  <span className="sev-filter-count">{sensitivityCounts[level]}</span>
-                </button>
-              )
-            })}
-          </div>
-        </div>
-      </section>
-
-      {(selectedCustomers.length > 0 ||
-        selectedSeverities.length > 0 ||
-        selectedSensitivities.length > 0) && (
-        <div className="selected-customers" aria-live="polite">
-          <span className="label">Active filters</span>
-          <div className="chip-row">
-            {selectedCustomers.map((c) => (
-              <button
-                key={c}
-                type="button"
-                className="customer-chip"
-                onClick={() => toggleCustomer(c)}
-                title="Remove filter"
-              >
-                {c}
-                <span aria-hidden>×</span>
-              </button>
-            ))}
-            {selectedSeverities.map((s) => (
-              <button
-                key={`sev-${s}`}
-                type="button"
-                className={`customer-chip chip-sev-${s}`}
-                onClick={() => toggleSeverity(s)}
-              >
-                Severity: {SEVERITY_LABEL[s]}
-                <span aria-hidden>×</span>
-              </button>
-            ))}
-            {selectedSensitivities.map((s) => (
-              <button
-                key={`sens-${s}`}
-                type="button"
-                className={`customer-chip chip-sens-${s}`}
-                onClick={() => toggleSensitivity(s)}
-              >
-                Sensitivity: {SENSITIVITY_LABEL[s]}
-                <span aria-hidden>×</span>
-              </button>
-            ))}
-            <button
-              type="button"
-              className="linkish clear-all"
-              onClick={() => {
-                setSelectedCustomers([])
-                setSelectedSeverities([])
-                setSelectedSensitivities([])
-              }}
-            >
-              Clear all
-            </button>
-          </div>
-        </div>
-      )}
-    </>
-  )
+  const sidebarFiltersProps = {
+    customerMenuOpen,
+    setCustomerMenuOpen,
+    customerQuery,
+    setCustomerQuery,
+    selectedCustomers,
+    filteredCustomers,
+    toggleCustomer,
+    clearCustomers: () => setSelectedCustomers([]),
+    selectedSeverities,
+    toggleSeverity,
+    severityCounts,
+    selectedSensitivities,
+    toggleSensitivity,
+    sensitivityCounts,
+    clearAllFilters,
+  }
 
   /* ——— Chatbot view ——— */
   if (viewMode === 'chatbot') {
@@ -489,7 +293,10 @@ export default function App() {
             </div>
           </header>
 
-          <div className="search-wrap">
+          <SidebarFilters {...sidebarFiltersProps} />
+
+          <div className="sidebar-scroll">
+            <div className="search-wrap">
             <svg className="search-icon" viewBox="0 0 24 24" width="16" height="16" aria-hidden>
               <circle cx="11" cy="11" r="7" stroke="currentColor" strokeWidth="1.8" fill="none" />
               <path
@@ -515,6 +322,7 @@ export default function App() {
               setChatbotTab('alerts')
             }}
           />
+          </div>
 
           <footer className="sidebar-foot">
             <span className="pulse" />
@@ -565,7 +373,6 @@ export default function App() {
                   selected={selected}
                   rejectingId={rejectingId}
                   setRejectingId={setRejectingId}
-                  selectedCustomers={selectedCustomers}
                 />
               ) : (
                 <div className="empty-detail">
@@ -651,7 +458,10 @@ export default function App() {
             </div>
           </header>
 
-          <div className="search-wrap">
+          <SidebarFilters {...sidebarFiltersProps} />
+
+          <div className="sidebar-scroll">
+            <div className="search-wrap">
             <svg className="search-icon" viewBox="0 0 24 24" width="16" height="16" aria-hidden>
               <circle cx="11" cy="11" r="7" stroke="currentColor" strokeWidth="1.8" fill="none" />
               <path
@@ -674,6 +484,7 @@ export default function App() {
             selectedId={selected?.id ?? null}
             onSelect={setSelectedId}
           />
+          </div>
 
           <footer className="sidebar-foot">
             <span className="pulse" />
@@ -683,7 +494,12 @@ export default function App() {
       )}
 
       <main className="main full-main">
-        {filterBar}
+        <header className="main-toolbar">
+          <div className="pipeline-hint" title="Confirm batch vs live frequency with ops">
+            <span className="pipeline-dot" />
+            Detection cadence: every 5 min (batch)
+          </div>
+        </header>
 
         <div className="workspace-split">
           <section className="detail-pane">
@@ -692,7 +508,6 @@ export default function App() {
                 selected={selected}
                 rejectingId={rejectingId}
                 setRejectingId={setRejectingId}
-                selectedCustomers={selectedCustomers}
                 onExitFullView={collapseToSmallView}
               />
             ) : (
@@ -730,6 +545,206 @@ export default function App() {
         </div>
       </main>
     </div>
+  )
+}
+
+function SidebarFilters({
+  customerMenuOpen,
+  setCustomerMenuOpen,
+  customerQuery,
+  setCustomerQuery,
+  selectedCustomers,
+  filteredCustomers,
+  toggleCustomer,
+  clearCustomers,
+  selectedSeverities,
+  toggleSeverity,
+  severityCounts,
+  selectedSensitivities,
+  toggleSensitivity,
+  sensitivityCounts,
+  clearAllFilters,
+}: {
+  customerMenuOpen: boolean
+  setCustomerMenuOpen: (fn: (o: boolean) => boolean) => void
+  customerQuery: string
+  setCustomerQuery: (v: string) => void
+  selectedCustomers: string[]
+  filteredCustomers: typeof CUSTOMER_PROFILES
+  toggleCustomer: (name: string) => void
+  clearCustomers: () => void
+  selectedSeverities: Severity[]
+  toggleSeverity: (sev: Severity) => void
+  severityCounts: Record<Severity, number>
+  selectedSensitivities: ReeferSensitivity[]
+  toggleSensitivity: (level: ReeferSensitivity) => void
+  sensitivityCounts: Record<ReeferSensitivity, number>
+  clearAllFilters: () => void
+}) {
+  const hasActiveFilters =
+    selectedCustomers.length > 0 ||
+    selectedSeverities.length > 0 ||
+    selectedSensitivities.length > 0
+
+  return (
+    <section className="sidebar-filters" aria-label="Filters">
+      <div className={`customer-picker sidebar-customer ${customerMenuOpen ? 'is-open' : ''}`}>
+        <span className="filter-section-label">Customers</span>
+        <button
+          type="button"
+          className="customer-trigger sidebar-trigger"
+          onClick={() => setCustomerMenuOpen((o) => !o)}
+          aria-expanded={customerMenuOpen}
+        >
+          <span className="customer-trigger-copy">
+            <span className="customer-trigger-value">
+              {selectedCustomers.length
+                ? `${selectedCustomers.length} selected`
+                : 'All customers'}
+            </span>
+          </span>
+          <span className="chev" aria-hidden>
+            ▾
+          </span>
+        </button>
+        {customerMenuOpen && (
+          <div className="dropdown sidebar-dropdown" role="menu">
+            <div className="dropdown-search">
+              <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden>
+                <circle cx="11" cy="11" r="7" stroke="currentColor" strokeWidth="1.8" fill="none" />
+                <path
+                  d="M16.5 16.5 21 21"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                  strokeLinecap="round"
+                />
+              </svg>
+              <input
+                value={customerQuery}
+                onChange={(e) => setCustomerQuery(e.target.value)}
+                placeholder="Search customers…"
+                aria-label="Search customers"
+                autoFocus
+              />
+            </div>
+            <div className="dropdown-head">
+              <span>Select one or more</span>
+              {selectedCustomers.length > 0 && (
+                <button type="button" className="linkish sidebar-link" onClick={clearCustomers}>
+                  Clear
+                </button>
+              )}
+            </div>
+            <div className="dropdown-scroll">
+              {filteredCustomers.map((profile) => (
+                <label key={profile.name} className="check-row sidebar-check">
+                  <input
+                    type="checkbox"
+                    checked={selectedCustomers.includes(profile.name)}
+                    onChange={() => toggleCustomer(profile.name)}
+                  />
+                  <span className="check-copy">
+                    <span>{profile.name}</span>
+                    <small>
+                      {profile.segment} · {SENSITIVITY_LABEL[profile.reeferSensitivity]}
+                    </small>
+                  </span>
+                </label>
+              ))}
+              {!filteredCustomers.length && (
+                <p className="dropdown-empty">No customers match “{customerQuery}”.</p>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+
+      <div className="filter-group">
+        <span className="filter-section-label">Alert severity</span>
+        <div className="sidebar-filter-stack" role="group" aria-label="Alert severity">
+          {(['high', 'medium', 'low'] as Severity[]).map((sev) => {
+            const on = selectedSeverities.includes(sev)
+            return (
+              <button
+                key={sev}
+                type="button"
+                className={`sidebar-filter-btn sev-${sev} ${on ? 'is-on' : ''}`}
+                onClick={() => toggleSeverity(sev)}
+                aria-pressed={on}
+              >
+                <span>{SEVERITY_LABEL[sev]}</span>
+                <span className="sidebar-filter-count">{severityCounts[sev]}</span>
+              </button>
+            )
+          })}
+        </div>
+      </div>
+
+      <div className="filter-group">
+        <span className="filter-section-label">Customer sensitivity</span>
+        <div className="sidebar-filter-stack" role="group" aria-label="Customer sensitivity">
+          {(['high', 'medium', 'low'] as ReeferSensitivity[]).map((level) => {
+            const on = selectedSensitivities.includes(level)
+            return (
+              <button
+                key={level}
+                type="button"
+                className={`sidebar-filter-btn sens-${level} ${on ? 'is-on' : ''}`}
+                onClick={() => toggleSensitivity(level)}
+                aria-pressed={on}
+                title={SENSITIVITY_HINT[level]}
+              >
+                <span>{SENSITIVITY_LABEL[level]}</span>
+                <span className="sidebar-filter-count">{sensitivityCounts[level]}</span>
+              </button>
+            )
+          })}
+        </div>
+      </div>
+
+      {hasActiveFilters && (
+        <div className="sidebar-active-filters" aria-live="polite">
+          <div className="chip-row">
+            {selectedCustomers.map((c) => (
+              <button
+                key={c}
+                type="button"
+                className="sidebar-chip"
+                onClick={() => toggleCustomer(c)}
+              >
+                {c}
+                <span aria-hidden>×</span>
+              </button>
+            ))}
+            {selectedSeverities.map((s) => (
+              <button
+                key={`sev-${s}`}
+                type="button"
+                className={`sidebar-chip chip-sev-${s}`}
+                onClick={() => toggleSeverity(s)}
+              >
+                {SEVERITY_LABEL[s]}
+                <span aria-hidden>×</span>
+              </button>
+            ))}
+            {selectedSensitivities.map((s) => (
+              <button
+                key={`sens-${s}`}
+                type="button"
+                className={`sidebar-chip chip-sens-${s}`}
+                onClick={() => toggleSensitivity(s)}
+              >
+                {SENSITIVITY_LABEL[s]} sens.
+                <span aria-hidden>×</span>
+              </button>
+            ))}
+          </div>
+          <button type="button" className="sidebar-link clear-all" onClick={clearAllFilters}>
+            Clear all filters
+          </button>
+        </div>
+      )}
+    </section>
   )
 }
 
@@ -810,25 +825,17 @@ function DetailPane({
   rejectingId,
   setRejectingId,
   onExitFullView,
-  selectedCustomers = [],
 }: {
   selected: Entity
   rejectingId: string | null
   setRejectingId: (id: string | null) => void
   onExitFullView?: () => void
-  /** Only these customers appear in sensitivity info (fallback: current shipment customer) */
-  selectedCustomers?: string[]
 }) {
-  const profile = getCustomerProfile(selected.customer)
-  const sensitivity = profile.reeferSensitivity
-
-  const profilesToShow = selectedCustomers.length
-    ? CUSTOMER_PROFILES.filter((c) => selectedCustomers.includes(c.name))
-    : [profile]
+  const pendingCount = selected.alerts.filter((a) => a.status === 'pending').length
 
   return (
     <>
-      <div className="detail-header">
+      <div className="detail-header detail-header-minimal">
         <div>
           <div className="detail-title">
             <span className="pro-badge">P</span>
@@ -837,27 +844,7 @@ function DetailPane({
               ↗
             </a>
           </div>
-          <p className="detail-sub">
-            {selected.alerts.length} alerts ·{' '}
-            {selected.alerts.filter((a) => a.status === 'active' || a.status === 'pending').length}{' '}
-            active · Last sent:{' '}
-            {latestAlert(selected)
-              ? formatAbsolute(latestAlert(selected)!.sentAt)
-              : '—'}
-          </p>
-          <p className="detail-customer">
-            {selected.customer}
-            <span className="dot">·</span>
-            <span className={`sens-inline sens-${sensitivity}`}>
-              {SENSITIVITY_LABEL[sensitivity]} reefer sensitivity
-            </span>
-            <span className="dot">·</span>
-            {profile.segment}
-            <span className="dot">·</span>
-            {selected.trailer}
-            <span className="dot">·</span>
-            {selected.origin} → {selected.destination}
-          </p>
+          <p className="detail-customer-only">{selected.customer}</p>
         </div>
         <div className="detail-badges">
           {onExitFullView && (
@@ -871,44 +858,15 @@ function DetailPane({
               Exit full view
             </button>
           )}
-          <span className={`sens-badge sens-${sensitivity}`} title={SENSITIVITY_HINT[sensitivity]}>
-            Cust. {SENSITIVITY_LABEL[sensitivity]}
-          </span>
-          <span className="pending-badge">
-            {selected.alerts.filter((a) => a.status === 'pending').length} pending
-          </span>
+          {pendingCount > 0 && (
+            <span className="pending-badge">
+              {pendingCount} pending
+            </span>
+          )}
         </div>
       </div>
 
-      <section className="customer-focus-card" aria-label="Selected customer sensitivity">
-        <div className="customer-focus-head">
-          <h3>Customer reefer sensitivity</h3>
-          <p>
-            {selectedCustomers.length
-              ? `Showing ${profilesToShow.length} selected customer${profilesToShow.length === 1 ? '' : 's'}`
-              : 'Showing the customer on this pro bill only'}
-          </p>
-        </div>
-        <div className="customer-focus-grid">
-          {profilesToShow.map((c) => (
-            <article
-              key={c.name}
-              className={`customer-mini-card ${c.name === selected.customer ? 'is-current' : ''}`}
-            >
-              <div className="customer-mini-top">
-                <strong>{c.name}</strong>
-                <span className={`sev-pill sev-${c.reeferSensitivity}`}>
-                  {SENSITIVITY_LABEL[c.reeferSensitivity]}
-                </span>
-              </div>
-              <p>{c.segment}</p>
-              <small>{SENSITIVITY_HINT[c.reeferSensitivity]}</small>
-            </article>
-          ))}
-        </div>
-      </section>
-
-      <div className="alert-stack">
+      <div className="alert-stack alert-stack-primary">
         {[...selected.alerts]
           .sort(
             (a, b) => new Date(b.sentAt).getTime() - new Date(a.sentAt).getTime(),
@@ -919,7 +877,6 @@ function DetailPane({
                 <div className="alert-status">
                   <span className="status-dot" />
                   <strong>ACTIVE</strong>
-                  <span className="agent-name">{alert.agent}</span>
                   <span className="type-tag">{ALERT_TYPE_LABEL[alert.type]}</span>
                   <span className={`sev-pill sev-${alert.severity}`}>
                     {SEVERITY_LABEL[alert.severity]}
@@ -931,45 +888,21 @@ function DetailPane({
 
               <p className="alert-message">{alert.message}</p>
 
-              <dl className="entity-grid">
-                <div>
-                  <dt>Trailer #</dt>
-                  <dd>{selected.trailer}</dd>
-                </div>
-                <div>
-                  <dt>Probill temp</dt>
-                  <dd>{selected.requiredTemp.toFixed(1)}°F</dd>
-                </div>
-                <div>
-                  <dt>Reefer status</dt>
-                  <dd>{selected.reeferStatus}</dd>
-                </div>
-                <div>
-                  <dt>Set temp</dt>
-                  <dd>{selected.setTemp.toFixed(1)}°F</dd>
-                </div>
+              <div className="alert-facts">
+                <span>Trailer {selected.trailer}</span>
+                <span>Target {selected.requiredTemp.toFixed(1)}°F</span>
+                <span>Set {selected.setTemp.toFixed(1)}°F</span>
+                <span>Reefer {selected.reeferStatus}</span>
                 {selected.reeferMode && (
-                  <div>
-                    <dt>Mode</dt>
-                    <dd>
-                      {selected.reeferMode}
-                      {selected.requiredMode &&
-                        selected.requiredMode !== selected.reeferMode && (
-                          <span className="warn-inline">
-                            {' '}
-                            (needs {selected.requiredMode})
-                          </span>
-                        )}
-                    </dd>
-                  </div>
+                  <span>
+                    Mode {selected.reeferMode}
+                    {selected.requiredMode &&
+                      selected.requiredMode !== selected.reeferMode && (
+                        <em className="warn-inline"> (needs {selected.requiredMode})</em>
+                      )}
+                  </span>
                 )}
-                {selected.returnAirTemp != null && (
-                  <div>
-                    <dt>Return air</dt>
-                    <dd>{selected.returnAirTemp.toFixed(1)}°F</dd>
-                  </div>
-                )}
-              </dl>
+              </div>
 
               <div className="alert-actions">
                 {rejectingId === alert.id ? (
@@ -1029,37 +962,9 @@ function DetailPane({
           ))}
       </div>
 
-      <p className="loaded-note">
-        All {selected.alerts.length} alerts loaded · sorted by alert sent time
-      </p>
-
-      <details className="config-panel">
-        <summary>Temperature deviation bands (no-alert ranges)</summary>
-        <p className="config-note" style={{ marginTop: 12 }}>
-          Within normal deviation for a band, alerts should not be generated. Customer reefer
-          sensitivity for selected customers is shown above.
-        </p>
-        <table>
-          <thead>
-            <tr>
-              <th>Temp band</th>
-              <th>Range</th>
-              <th>Normal deviation</th>
-            </tr>
-          </thead>
-          <tbody>
-            {TEMP_RANGE_CONFIG.map((band) => (
-              <tr key={band.id}>
-                <td>{band.label}</td>
-                <td>
-                  {band.minF}°F – {band.maxF}°F
-                </td>
-                <td>±{band.normalDeviationF}°F (no alert)</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </details>
+      {selected.alerts.length === 0 && (
+        <p className="loaded-note">No active alerts for this pro bill.</p>
+      )}
     </>
   )
 }
